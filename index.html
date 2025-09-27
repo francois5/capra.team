@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Capra Solutions - Services Informatiques</title>
 
+    <!-- Force HTTPS redirect -->
+    <script>
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        location.replace('https:' + window.location.href.substring(window.location.protocol.length));
+      }
+    </script>
+
     <!-- Critical loading styles -->
     <style>
 
