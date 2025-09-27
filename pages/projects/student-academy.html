@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/capra-logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Academy - Capra Solutions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Add i18next library -->
+  <script src="https://cdn.jsdelivr.net/npm/i18next@21.6.10/i18next.min.js"></script>
+  
+  <!-- Language Button Styles -->
+  <style>
+    /* Language Button Styles */
+    .language-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      background-color: #f3f4f6;
+      color: #6b7280;
+    }
+    
+    .language-btn:hover {
+      background-color: #e5e7eb;
+      color: #5E0204;
+    }
+    
+    .language-btn.active {
+      background-color: #5E0204;
+      color: white;
+    }
+    
+    /* Mobile Language Button Styles - Fixed equal sizing */
+    .mobile-language-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      padding: 0.4rem 0;
+      font-size: 0.8rem;
+      font-weight: 500;
+      transition: background-color 0.2s ease;
+      background-color: transparent;
+      color: #6b7280;
+      border-right: 1px solid #e5e7eb;
+      text-align: center;
+      min-width: 0;
+      width: 33.333%;
+    }
+    
+    .mobile-language-btn:last-child {
+      border-right: none;
+    }
+    
+    .mobile-language-btn:hover {
+      background-color: #f9fafb;
+      color: #5E0204;
+    }
+    
+    .mobile-language-btn.active {
+      background-color: #5E0204;
+      color: white;
+      border-right-color: #5E0204;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/main-BXg-bYds.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-CrNlWh50.css">
+</head>
+<body class="bg-gray-50">
+  <nav class="bg-white shadow-lg fixed w-full z-50">
+    <div class="container mx-auto px-4">
+      <div class="flex justify-between items-center h-20">
+        <a href="/" class="flex items-center space-x-3">
+          <div class="relative w-12 h-12">
+            <img 
+              src="/capra-logo.png" 
+              alt="Capra Solutions" 
+              class="w-11 h-11 m-[2px] object-contain" 
+            />
+            <div class="absolute inset-0 border-[2px] border-[#5E0204] rounded-lg"></div>
+          </div>
+          <span class="text-2xl font-bold text-[#5E0204]">Capra Solutions</span>
+        </a>
+        
+        <!-- Menu Mobile Button -->
+        <button id="mobile-menu-button" class="lg:hidden flex items-center" aria-label="Menu">
+          <svg class="w-8 h-8 text-[#5E0204]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path class="mobile-menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            <path class="mobile-menu-close hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+
+        <!-- Menu Desktop -->
+        <div class="hidden lg:flex space-x-8">
+          <a href="/#services" class="text-gray-600 hover:text-[#5E0204] font-medium" data-i18n="services">Services</a>
+          <a href="/#projects" class="text-gray-600 hover:text-[#5E0204] font-medium" data-i18n="projects">Projets</a>
+          <a href="/#about" class="text-gray-600 hover:text-[#5E0204] font-medium" data-i18n="about">À propos</a>
+          <a href="/#contact" class="text-gray-600 hover:text-[#5E0204] font-medium" data-i18n="contact">Contact</a>
+          
+          <!-- Language Selector Desktop -->
+          <div class="flex space-x-2 items-center">
+            <a href="#" class="language-btn active" data-lang="fr">FR</a>
+            <a href="#" class="language-btn" data-lang="en">EN</a>
+            <a href="#" class="language-btn" data-lang="nl">NL</a>
+          </div>
+        </div>
+        <a href="/#contact" class="hidden lg:block bg-[#5E0204] text-white px-6 py-2 rounded-full hover:bg-[#4A0103] transition-colors" data-i18n="quote">
+          Demander un devis
+        </a>
+      </div>
+
+      <!-- Menu Mobile -->
+      <div id="mobile-menu" class="lg:hidden h-0 overflow-hidden transition-all duration-300">
+        <div class="py-4 space-y-4 flex flex-col">
+          <a href="/#services" class="block text-gray-600 hover:text-[#5E0204] font-medium" data-i18n="services">Services</a>
+          <a href="/#projects" class="block text-gray-600 hover:text-[#5E0204] font-medium" data-i18n="projects">Projets</a>
+          <a href="/#about" class="block text-gray-600 hover:text-[#5E0204] font-medium" data-i18n="about">À propos</a>
+          <a href="/#contact" class="block text-gray-600 hover:text-[#5E0204] font-medium" data-i18n="contact">Contact</a>
+          
+          <!-- Language Selector Mobile -->
+          <div class="flex w-3/4 mx-auto mt-6 border rounded-md overflow-hidden">
+            <a href="#" class="mobile-language-btn active" data-lang="fr">FR</a>
+            <a href="#" class="mobile-language-btn" data-lang="en">EN</a>
+            <a href="#" class="mobile-language-btn" data-lang="nl">NL</a>
+          </div>
+          
+          <div class="mt-auto mb-12" style="bottom: 3rem;position: absolute;width: 100%;">
+            <a href="/#contact" class="inline-block bg-[#5E0204] text-white px-6 py-2 rounded-full hover:bg-[#4A0103] transition-colors" data-i18n="quote" style="width: calc(100% - 4rem);margin-left: 2rem;margin-right: 2rem;margin-bottom: 2rem;">
+              Demander un devis
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mx-auto px-4 py-32">
+    <!-- Reste du contenu inchangé -->
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div class="p-8">
+        <h1 class="text-3xl font-bold mb-4" data-i18n="project_title">Student Academy - Application de Réservation de Cours</h1>
+        <div class="flex flex-wrap gap-2 mb-8">
+          <span class="tag">Vue.js</span>
+          <span class="tag">Node.js</span>
+          <span class="tag">Ionic</span>
+          <span class="tag">MongoDB</span>
+        </div>
+        
+        <img src="/header.png" alt="Student Academy" class="w-full h-[500px] object-cover rounded-xl mb-8 cursor-pointer">
+        
+        <div class="mb-12">
+          <h2 class="text-2xl font-semibold mb-4" data-i18n="description_heading">Description</h2>
+          <p class="text-gray-700 text-lg leading-relaxed" data-i18n="project_description">
+            Student Academy est une application innovante qui met en relation les étudiants avec des enseignants qualifiés pour des cours particuliers. Développée avec Vue.js et Ionic pour une expérience mobile fluide, l'application s'appuie sur Node.js et MongoDB pour une gestion robuste des données et des interactions en temps réel.
+          </p>
+        </div>
+
+        <div class="mb-12">
+          <h2 class="text-2xl font-semibold mb-6" data-i18n="features_heading">Fonctionnalités</h2>
+          <ul class="space-y-3 text-gray-700">
+            <li data-i18n="feature_1">Recherche avancée de professeurs par matière, niveau et disponibilité</li>
+            <li data-i18n="feature_2">Système de réservation en temps réel avec calendrier intégré</li>
+            <li data-i18n="feature_3">Messagerie instantanée entre étudiants et professeurs</li>
+            <li data-i18n="feature_4">Paiement sécurisé des cours via Stripe</li>
+            <li data-i18n="feature_5">Système de notation et d'avis détaillés</li>
+            <li data-i18n="feature_6">Gestion intelligente du calendrier et des disponibilités</li>
+            <li data-i18n="feature_7">Profils détaillés des enseignants avec vérification des qualifications</li>
+            <li data-i18n="feature_8">Mode sombre et mode clair personnalisables</li>
+            <li data-i18n="feature_9">Notifications push pour les rappels de cours</li>
+            <li data-i18n="feature_10">Interface adaptative pour mobile et tablette</li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold mb-6" data-i18n="gallery_heading">Galerie</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <img src="/Homescreen.png" alt="Image du projet" class="gallery-image">
+            <img src="/Course_screen.png" alt="Image du projet" class="gallery-image">
+            <img src="/Plan_lesson.png" alt="Image du projet" class="gallery-image">
+            <img src="/Plan_lesson_2.png" alt="Image du projet" class="gallery-image">
+            <img src="/Profile.png" alt="Image du projet" class="gallery-image">
+            <img src="/Feedback.png" alt="Image du projet" class="gallery-image">
+            <img src="/History.png" alt="Image du projet" class="gallery-image">
+            <img src="/Notifications.png" alt="Image du projet" class="gallery-image">
+            <img src="/State_of_lesson.png" alt="Image du projet" class="gallery-image">
+          </div>
+        </div>
+
+        <div class="mt-12 flex justify-between items-center">
+          <a href="/#projects" class="inline-flex items-center text-[#5E0204] hover:text-[#4A0103] font-medium" data-i18n="back_to_projects">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Retour aux projets
+          </a>
+          <a href="/#contact" class="bg-[#5E0204] text-white px-6 py-3 rounded-full hover:bg-[#4A0103] transition-colors" data-i18n="discuss_project">
+            Discuter de ce projet
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- Footer -->
+  <footer class="bg-black text-white py-12">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <!-- Company Info -->
+        <div class="space-y-4">
+          <div class="relative w-12 h-12">
+            <img 
+              src="/capra-logo.png" 
+              alt="Capra Solutions" 
+              class="w-11 h-11 m-[2px] object-contain" 
+            />
+            <div class="absolute inset-0 border-[2px] border-[#5E0204]"></div>
+          </div>
+          <p class="text-gray-400" data-i18n="footer_tagline">
+            Solutions numériques sur mesure pour votre entreprise
+          </p>
+          <div class="flex space-x-4">
+            <a href="https://www.linkedin.com/company/capra-solutions-be" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors">
+              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div>
+          <h3 class="text-lg font-semibold mb-4" data-i18n="quick_links">Liens rapides</h3>
+          <ul class="space-y-2">
+            <li><a href="/#services" class="text-gray-400 hover:text-white transition-colors">Services</a></li>
+            <li><a href="/#projects" class="text-gray-400 hover:text-white transition-colors">Projets</a></li>
+            <li><a href="/#about" class="text-gray-400 hover:text-white transition-colors">À propos</a></li>
+            <li><a href="/#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+          </ul>
+        </div>
+
+        <!-- Contact Info -->
+        <div>
+          <h3 class="text-lg font-semibold mb-4" data-i18n="contact_info">Contact</h3>
+          <ul class="space-y-2 text-gray-400">
+            <li>
+              <a href="mailto:info@capra.solutions" class="hover:text-white transition-colors">
+                <span data-i18n="email_general">Email général : info@capra.solutions</span>
+              </a>
+            </li>
+            <li>
+              <a href="mailto:francois@capra.solutions" class="hover:text-white transition-colors">
+                <span data-i18n="email_founder">Fondateur : francois@capra.solutions</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://wa.me/32460260017" class="hover:text-white transition-colors">
+                <span data-i18n="whatsapp">WhatsApp : +32460260017</span>
+              </a>
+            </li>
+            <li data-i18n="location">Bruxelles</li>
+          </ul>
+        </div>
+
+        <!-- Legal -->
+        <div>
+          <h3 class="text-lg font-semibold mb-4" data-i18n="legal">Légal</h3>
+          <ul class="space-y-2">
+            <li><a href="https://capra.solutions/politique_de_confidentialite.pdf" class="text-gray-400 hover:text-white transition-colors" data-i18n="privacy_policy">Politique de confidentialité</a></li>
+            <li><a href="https://capra.solutions/legal-notice-fr.pdf" class="text-gray-400 hover:text-white transition-colors" data-i18n="terms_of_use">Conditions d'utilisation</a></li>
+            <li class="text-gray-400" data-i18n="vat">TVA: BE1001.630.611</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400">
+        <p data-i18n="copyright">&copy; 2024 Capra Solutions. Tous droits réservés.</p>
+      </div>
+    </div>
+  </footer>
+  
+  <!-- Add translation script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize translations
+      const resources = {
+        fr: {
+          translation: {
+            // Navigation
+            "services": "Services",
+            "projects": "Projets",
+            "about": "À propos",
+            "contact": "Contact",
+            "quote": "Demander un devis",
+            "back_to_projects": "Retour aux projets",
+            "discuss_project": "Discuter de ce projet",
+            
+            // Project Content
+            "project_title": "Student Academy - Application de Réservation de Cours",
+            "description_heading": "Description",
+            "project_description": "Student Academy est une application innovante qui met en relation les étudiants avec des enseignants qualifiés pour des cours particuliers. Développée avec Vue.js et Ionic pour une expérience mobile fluide, l'application s'appuie sur Node.js et MongoDB pour une gestion robuste des données et des interactions en temps réel.",
+            "features_heading": "Fonctionnalités",
+            "feature_1": "Recherche avancée de professeurs par matière, niveau et disponibilité",
+            "feature_2": "Système de réservation en temps réel avec calendrier intégré",
+            "feature_3": "Messagerie instantanée entre étudiants et professeurs",
+            "feature_4": "Paiement sécurisé des cours via Stripe",
+            "feature_5": "Système de notation et d'avis détaillés",
+            "feature_6": "Gestion intelligente du calendrier et des disponibilités",
+            "feature_7": "Profils détaillés des enseignants avec vérification des qualifications",
+            "feature_8": "Mode sombre et mode clair personnalisables",
+            "feature_9": "Notifications push pour les rappels de cours",
+            "feature_10": "Interface adaptative pour mobile et tablette",
+            "gallery_heading": "Galerie",
+            
+            // Footer translations
+            "footer_tagline": "Solutions numériques sur mesure pour votre entreprise",
+            "quick_links": "Liens rapides",
+            "contact_info": "Contact",
+            "email_general": "Email général : info@capra.solutions",
+            "email_founder": "Fondateur : francois@capra.solutions",
+            "whatsapp": "WhatsApp : +32460260017",
+            "location": "Bruxelles",
+            "legal": "Légal",
+            "privacy_policy": "Politique de confidentialité",
+            "terms_of_use": "Conditions d'utilisation",
+            "vat": "TVA: BE1001.630.611",
+            "copyright": "© 2024 Capra Solutions. Tous droits réservés."
+          }
+        },
+        en: {
+          translation: {
+            // Navigation
+            "services": "Services",
+            "projects": "Projects",
+            "about": "About",
+            "contact": "Contact",
+            "quote": "Request a quote",
+            "back_to_projects": "Back to projects",
+            "discuss_project": "Discuss this project",
+            
+            // Project Content
+            "project_title": "Student Academy - Course Booking Application",
+            "description_heading": "Description",
+            "project_description": "Student Academy is an innovative application that connects students with qualified teachers for private lessons. Developed with Vue.js and Ionic for a smooth mobile experience, the application relies on Node.js and MongoDB for robust data management and real-time interactions.",
+            "features_heading": "Features",
+            "feature_1": "Advanced teacher search by subject, level, and availability",
+            "feature_2": "Real-time booking system with integrated calendar",
+            "feature_3": "Instant messaging between students and teachers",
+            "feature_4": "Secure course payment via Stripe",
+            "feature_5": "Detailed rating and review system",
+            "feature_6": "Intelligent calendar and availability management",
+            "feature_7": "Detailed teacher profiles with qualification verification",
+            "feature_8": "Customizable dark and light modes",
+            "feature_9": "Push notifications for course reminders",
+            "feature_10": "Adaptive interface for mobile and tablet",
+            "gallery_heading": "Gallery",
+            
+            // Footer translations
+            "footer_tagline": "Custom digital solutions for your business",
+            "quick_links": "Quick links",
+            "contact_info": "Contact",
+            "email_general": "General email: info@capra.solutions",
+            "email_founder": "Founder: francois@capra.solutions",
+            "whatsapp": "WhatsApp: +32460260017",
+            "location": "Brussels",
+            "legal": "Legal",
+            "privacy_policy": "Privacy Policy",
+            "terms_of_use": "Terms of Use",
+            "vat": "VAT: BE1001.630.611",
+            "copyright": "© 2024 Capra Solutions. All rights reserved."
+          }
+        },
+        nl: {
+          translation: {
+            // Navigation
+            "services": "Diensten",
+            "projects": "Projecten",
+            "about": "Over ons",
+            "contact": "Contact",
+            "quote": "Offerte aanvragen",
+            "back_to_projects": "Terug naar projecten",
+            "discuss_project": "Dit project bespreken",
+            
+            // Project Content
+            "project_title": "Student Academy - Cursusboekingsapplicatie",
+            "description_heading": "Beschrijving",
+            "project_description": "Student Academy is een innovatieve applicatie die studenten in contact brengt met gekwalificeerde docenten voor privélessen. Ontwikkeld met Vue.js en Ionic voor een soepele mobiele ervaring, maakt de applicatie gebruik van Node.js en MongoDB voor robuust gegevensbeheer en realtime interacties.",
+            "features_heading": "Functionaliteiten",
+            "feature_1": "Geavanceerd zoeken naar docenten op vak, niveau en beschikbaarheid",
+            "feature_2": "Realtime boekingssysteem met geïntegreerde kalender",
+            "feature_3": "Instant messaging tussen studenten en docenten",
+            "feature_4": "Veilige cursusbetaling via Stripe",
+            "feature_5": "Gedetailleerd beoordelings- en recensiesysteem",
+            "feature_6": "Intelligent beheer van kalender en beschikbaarheid",
+            "feature_7": "Gedetailleerde docentenprofielen met kwalificatieverificatie",
+            "feature_8": "Aanpasbare donkere en lichte modus",
+            "feature_9": "Push-meldingen voor cursusherinneringen",
+            "feature_10": "Adaptieve interface voor mobiel en tablet",
+            "gallery_heading": "Galerij",
+            
+            // Footer translations
+            "footer_tagline": "Digitale oplossingen op maat voor uw bedrijf",
+            "quick_links": "Snelle links",
+            "contact_info": "Contact",
+            "email_general": "Algemene e-mail: info@capra.solutions",
+            "email_founder": "Oprichter: francois@capra.solutions",
+            "whatsapp": "WhatsApp: +32460260017",
+            "location": "Brussel",
+            "legal": "Juridisch",
+            "privacy_policy": "Privacybeleid",
+            "terms_of_use": "Gebruiksvoorwaarden",
+            "vat": "BTW: BE1001.630.611",
+            "copyright": "© 2024 Capra Solutions. Alle rechten voorbehouden."
+          }
+        }
+      };
+      
+      // Initialize i18next
+      i18next.init({
+        lng: 'fr',
+        fallbackLng: 'fr',
+        debug: false,
+        resources: resources
+      }).then(function() {
+        // Initial translation
+        updateContent();
+        
+        // Check for saved language preference
+        const savedLanguage = localStorage.getItem('preferredLanguage');
+        if (savedLanguage && resources[savedLanguage]) {
+          i18next.changeLanguage(savedLanguage).then(() => {
+            updateActiveButtons(savedLanguage);
+            updateContent();
+          });
+        }
+        
+        // Language switcher functionality
+        document.querySelectorAll('.language-btn, .mobile-language-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const lang = this.getAttribute('data-lang');
+            i18next.changeLanguage(lang).then(() => {
+              localStorage.setItem('preferredLanguage', lang);
+              updateActiveButtons(lang);
+              updateContent();
+            });
+          });
+        });
+      });
+      
+      function updateActiveButtons(lang) {
+        document.querySelectorAll('.language-btn, .mobile-language-btn').forEach(btn => {
+          if (btn.getAttribute('data-lang') === lang) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+      }
+      
+      function updateContent() {
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+          const key = element.getAttribute('data-i18n');
+          element.textContent = i18next.t(key);
+        });
+      }
+      
+      // Mobile menu functionality
+      const mobileMenuButton = document.getElementById('mobile-menu-button');
+      const mobileMenu = document.getElementById('mobile-menu');
+      const mobileMenuIcon = document.querySelector('.mobile-menu-icon');
+      const mobileMenuClose = document.querySelector('.mobile-menu-close');
+      
+      if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener('click', function() {
+          if (mobileMenu.classList.contains('h-0')) {
+            mobileMenu.classList.remove('h-0');
+            mobileMenu.classList.add('h-auto');
+            mobileMenuIcon.classList.add('hidden');
+            mobileMenuClose.classList.remove('hidden');
+          } else {
+            mobileMenu.classList.add('h-0');
+            mobileMenu.classList.remove('h-auto');
+            mobileMenuIcon.classList.remove('hidden');
+            mobileMenuClose.classList.add('hidden');
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

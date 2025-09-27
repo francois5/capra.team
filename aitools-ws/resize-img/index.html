@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redimensionneur d'Images</title>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --accent-color: #7209b7;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4cc9f0;
+            --error-color: #f72585;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            text-align: center;
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        main {
+            max-width: 1200px;
+            width: 90%;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            flex: 1;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+        }
+
+        .upload-section, .preview-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #fafafa;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary-color);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .upload-area i {
+            font-size: 3rem;
+            color: #ccc;
+            margin-bottom: 1rem;
+        }
+
+        .upload-area.has-image {
+            border: none;
+            padding: 0;
+        }
+
+        .upload-area.has-image img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+        }
+
+        .settings {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input[type="number"], input[type="file"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .dimensions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .dimensions .form-group {
+            flex: 1;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .checkbox-group input {
+            width: auto;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .preview-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #fafafa;
+            border-radius: 8px;
+            padding: 1rem;
+            min-height: 300px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-info {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .download-btn {
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .alert-error {
+            background-color: var(--error-color);
+        }
+
+        .alert-success {
+            background-color: var(--success-color);
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: auto;
+            background-color: var(--light-color);
+            color: #6c757d;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 10;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .actions button {
+            flex: 1;
+        }
+
+        /* Icônes */
+        .icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            stroke-width: 0;
+            stroke: currentColor;
+            fill: currentColor;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <h1>Redimensionneur d'Images</h1>
+        <p class="subtitle">Redimensionnez vos images facilement et rapidement</p>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="upload-section">
+                <h2>Image Source</h2>
+                <div id="upload-area" class="upload-area">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Glissez-déposez votre image ici ou cliquez pour sélectionner</p>
+                    <input type="file" id="file-input" accept="image/*">
+                </div>
+
+                <div class="settings">
+                    <h3>Paramètres</h3>
+                    <div class="dimensions">
+                        <div class="form-group">
+                            <label for="width">Largeur (px)</label>
+                            <input type="number" id="width" min="1" placeholder="Largeur">
+                        </div>
+                        <div class="form-group">
+                            <label for="height">Hauteur (px)</label>
+                            <input type="number" id="height" min="1" placeholder="Hauteur">
+                        </div>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="maintain-ratio" checked>
+                        <label for="maintain-ratio">Conserver les proportions</label>
+                    </div>
+                    <div class="actions">
+                        <button id="resize-btn" disabled>
+                            <i class="fas fa-crop-alt"></i> Redimensionner
+                        </button>
+                        <button id="reset-btn" class="btn-secondary" disabled>
+                            <i class="fas fa-undo"></i> Réinitialiser
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <h2>Aperçu</h2>
+                <div class="preview-container">
+                    <img id="preview-image" class="preview-image" style="display: none;">
+                    <div id="preview-placeholder">
+                        <p>L'image redimensionnée apparaîtra ici</p>
+                    </div>
+                    <div class="preview-info" id="preview-info"></div>
+                </div>
+                <button id="download-btn" class="download-btn" disabled>
+                    <i class="fas fa-download"></i> Télécharger l'image
+                </button>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 Redimensionneur d'Images. Tous droits réservés.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = document.getElementById('file-input');
+            const widthInput = document.getElementById('width');
+            const heightInput = document.getElementById('height');
+            const maintainRatioCheckbox = document.getElementById('maintain-ratio');
+            const resizeBtn = document.getElementById('resize-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const previewImage = document.getElementById('preview-image');
+            const previewPlaceholder = document.getElementById('preview-placeholder');
+            const previewInfo = document.getElementById('preview-info');
+            const downloadBtn = document.getElementById('download-btn');
+            const loading = document.getElementById('loading');
+
+            let originalImage = null;
+            let originalWidth = 0;
+            let originalHeight = 0;
+            let aspectRatio = 0;
+
+            // Événements pour le glisser-déposer
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                uploadArea.classList.add('dragover');
+            }
+
+            function unhighlight() {
+                uploadArea.classList.remove('dragover');
+            }
+
+            uploadArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            }
+
+            uploadArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', function() {
+                handleFiles(this.files);
+            });
+
+            function handleFiles(files) {
+                if (files.length === 0) return;
+                
+                const file = files[0];
+                if (!file.type.match('image.*')) {
+                    alert('Veuillez sélectionner une image valide.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        originalImage = img;
+                        originalWidth = img.width;
+                        originalHeight = img.height;
+                        aspectRatio = originalWidth / originalHeight;
+
+                        // Mettre à jour l'interface
+                        uploadArea.innerHTML = '';
+                        uploadArea.classList.add('has-image');
+                        
+                        const displayImg = document.createElement('img');
+                        displayImg.src = e.target.result;
+                        uploadArea.appendChild(displayImg);
+
+                        // Remplir les champs de dimensions
+                        widthInput.value = originalWidth;
+                        heightInput.value = originalHeight;
+
+                        // Activer les boutons
+                        resizeBtn.disabled = false;
+                        resetBtn.disabled = false;
+                    };
+                    img.src = e.target.result;
+                };
+                
+                reader.readAsDataURL(file);
+            }
+
+            // Maintenir le ratio d'aspect
+            widthInput.addEventListener('input', function() {
+                if (maintainRatioCheckbox.checked && originalImage) {
+                    const newWidth = parseInt(this.value) || 0;
+                    heightInput.value = Math.round(newWidth / aspectRatio);
+                }
+            });
+
+            heightInput.addEventListener('input', function() {
+                if (maintainRatioCheckbox.checked && originalImage) {
+                    const newHeight = parseInt(this.value) || 0;
+                    widthInput.value = Math.round(newHeight * aspectRatio);
+                }
+            });
+
+            // Redimensionner l'image
+            resizeBtn.addEventListener('click', function() {
+                if (!originalImage) return;
+
+                const newWidth = parseInt(widthInput.value) || 0;
+                const newHeight = parseInt(heightInput.value) || 0;
+
+                if (newWidth <= 0 || newHeight <= 0) {
+                    alert('Veuillez entrer des dimensions valides.');
+                    return;
+                }
+
+                loading.style.display = 'flex';
+
+                setTimeout(() => {
+                    resizeImage(originalImage, newWidth, newHeight);
+                    loading.style.display = 'none';
+                }, 500);
+            });
+
+            function resizeImage(img, width, height) {
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                const resizedImageUrl = canvas.toDataURL('image/png');
+                
+                // Afficher l'aperçu
+                previewImage.src = resizedImageUrl;
+                previewImage.style.display = 'block';
+                previewPlaceholder.style.display = 'none';
+                
+                // Mettre à jour les informations
+                previewInfo.textContent = `Dimensions: ${width}px × ${height}px`;
+                
+                // Activer le bouton de téléchargement
+                downloadBtn.disabled = false;
+                downloadBtn.onclick = function() {
+                    const link = document.createElement('a');
+                    link.download = 'image_redimensionnee.png';
+                    link.href = resizedImageUrl;
+                    link.click();
+                };
+            }
+
+            // Réinitialiser
+            resetBtn.addEventListener('click', function() {
+                if (!originalImage) return;
+                
+                widthInput.value = originalWidth;
+                heightInput.value = originalHeight;
+                
+                previewImage.style.display = 'none';
+                previewPlaceholder.style.display = 'block';
+                previewInfo.textContent = '';
+                downloadBtn.disabled = true;
+            });
+        });
+    </script>
+</body>
+</html>

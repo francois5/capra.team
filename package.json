@@ -1,0 +1,9 @@
+{
+  "name": "capra.team",
+  "version": "1.0.0",
+  "description": "Capra Solutions - Services Informatiques",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'",
+    "serve": "python3 -m http.server 8000"
+  }
+}

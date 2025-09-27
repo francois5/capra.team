@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="nl-fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="images/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="images/favicon.svg">
+    <!-- Emoji Favicon Solution-->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📸%3C/text%3E%3C/svg%3E">
+    <title>Professioneel Oude Foto's Scannen & Inkleuren | Dienst voor Restauratie en Digitalisering</title>
+    <meta name="description" content="✓ Hoogwaardige foto scans ✓ Herstel beschadigde foto's ✓ Inkleuren van zwart-wit foto's ➤ Bewaar uw familieherinneringen in topkwaliteit. Gratis prijsofferte!">
+    <meta name="keywords" content="foto scannen, oude foto's digitaliseren, foto restauratie, foto inkleuren, zwart-wit foto's inkleuren, familiefoto's herstellen, beschadigde foto's, fotoverzameling digitaliseren, foto archivering, fotoalbum digitaliseren, oude dia's scannen, familiegeschiedenis bewaren, retro foto's, erfgoed digitaliseren, fotocollectie restaureren">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Oude Foto's Scannen & Inkleuren | Foto Restauratie Dienst België">
+    <meta property="og:description" content="Geef je oude foto's een tweede leven! Professionele scan- en inkleurdienst. Bewaar uw kostbare herinneringen in topkwaliteit. Vraag nu een gratis prijsofferte aan!">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="nl_BE">
+    <meta property="og:locale:alternate" content="fr_BE">
+    <meta property="og:image" content="https://www.photorestoration.local/images/before-after-photo.jpg">
+    <meta property="og:url" content="https://www.photorestoration.local/">
+    <meta property="og:site_name" content="Foto Scan & Restauratie Dienst">
+    <link rel="canonical" href="https://www.photorestoration.local/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Oude Foto's Scannen & Inkleuren | Foto Restauratie Dienst">
+    <meta name="twitter:description" content="Digitaliseer en herstel uw oude en beschadigde foto's in topkwaliteit. Professionele service met lokale expertise.">
+    <meta name="twitter:image" content="https://www.photorestoration.local/images/before-after-photo.jpg">
+    <meta name="geo.region" content="BE" />
+    <meta name="geo.placename" content="Brussel" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            background: linear-gradient(to right, #3498db, #2c3e50);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        header h1 {
+            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+        }
+        .container {
+            padding: 2rem;
+        }
+        .language-selector {
+            display: flex;
+            justify-content: flex-end;
+            padding: 1rem 2rem;
+            background-color: #f8f9fa;
+        }
+        .language-selector button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            margin-left: 1rem;
+            font-weight: bold;
+        }
+        .language-selector button.active {
+            border-bottom: 2px solid #3498db;
+            color: #3498db;
+        }
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .benefits {
+            margin: 2rem 0;
+        }
+        .benefits h3 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+        .benefits ul {
+            margin-left: 1.5rem;
+        }
+        .cta {
+            background-color: #f8f9fa;
+            padding: 3rem 2rem;
+            text-align: center;
+            margin: 2rem 0;
+            border-radius: 8px;
+        }
+        .cta h2 {
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+        }
+        .button {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-top: 1rem;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .examples {
+            display: flex;
+            justify-content: space-between;
+            margin: 3rem 0;
+            flex-wrap: wrap;
+        }
+        .example-card {
+            flex-basis: 30%;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .example-card .img-placeholder {
+            height: 180px;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+        }
+        .example-card .card-content {
+            padding: 1.5rem;
+        }
+        footer {
+            background-color: #2c3e50;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        .hidden {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            .example-card {
+                flex-basis: 100%;
+            }
+        }
+        .testimonials {
+            margin: 3rem 0;
+        }
+        .testimonial {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .testimonial p {
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+        .testimonial .author {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "Foto Scan & Restauratie Dienst",
+      "image": "https://www.photorestoration.local/images/logo.jpg",
+      "@id": "https://www.photorestoration.local/#business",
+      "url": "https://www.photorestoration.local",
+      "telephone": "+32 2 123 4567",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Koningstraat 123",
+        "addressLocality": "Brussel",
+        "postalCode": "1000",
+        "addressCountry": "BE"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 50.8503,
+        "longitude": 4.3517
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday"
+          ],
+          "opens": "09:00",
+          "closes": "18:00"
+        }
+      ],
+      "sameAs": [
+        "https://www.facebook.com/fotoscanrestauratie",
+        "https://www.instagram.com/fotoscanrestauratie"
+      ],
+      "priceRange": "€€",
+      "servesCuisine": "Foto restauratie, Foto digitalisering, Foto inkleuring"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "serviceType": "Foto Restauratie en Digitalisering",
+      "provider": {
+        "@type": "LocalBusiness",
+        "name": "Foto Scan & Restauratie Dienst",
+        "@id": "https://www.photorestoration.local/#business"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": "België"
+      },
+      "serviceOutput": "Gerestaureerde en gedigitaliseerde foto's",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock",
+        "description": "Professionele diensten voor het scannen, restaureren en inkleuren van oude foto's. Prijzen op aanvraag."
+      }
+    }
+    </script>
+</head>
+<body>
+    <div class="language-selector">
+        <button onclick="switchLanguage('nl')" id="nl-button" class="active">Vlaams</button>
+        <button onclick="switchLanguage('fr')" id="fr-button">Français</button>
+    </div>
+
+    <header>
+        <h1 class="nl">Professioneel Oude Foto's Scannen & Inkleuren in België</h1>
+        <h1 class="fr hidden">Numérisation & Colorisation Professionnelle de Photos Anciennes en Belgique</h1>
+        <p class="nl">Breng uw dierbare herinneringen terug tot leven</p>
+        <p class="fr hidden">Redonnez vie à vos précieux souvenirs</p>
+    </header>
+
+    <div class="container" itemscope itemtype="https://schema.org/Service">
+        <meta itemprop="name" content="Foto Scan & Restauratie Dienst" />
+        <meta itemprop="serviceType" content="Foto restauratie en digitalisering" />
+        <section class="promo" style="background-color: #f0f8ff; padding: 2rem; border-radius: 8px; margin-top: 0; margin-bottom: 2rem;">
+            <h2 class="nl" itemprop="slogan">Geef je oude foto's een tweede leven! 🖼️✨</h2>
+            <h2 class="fr hidden">Donnez une seconde vie à vos anciennes photos! 🖼️✨</h2>
+            
+            <p class="nl" style="margin-bottom: 1.5rem;">Heb jij ook een doos vol oude foto's die langzaam vervagen, scheuren of verkleuren? Laat ze niet verloren gaan! Wij digitaliseren jouw kostbare herinneringen en brengen ze weer tot leven.</p>
+            <p class="fr hidden" style="margin-bottom: 1.5rem;">Avez-vous aussi une boîte pleine de vieilles photos qui s'estompent, se déchirent ou se décolorent lentement? Ne les laissez pas se perdre! Nous numérisons vos précieux souvenirs et les ramenons à la vie.</p>
+            
+            <div class="nl" style="margin-bottom: 1.5rem;">
+                <p style="margin-bottom: 0.5rem;">✔ Hoogwaardige foto-scans – bewaar je herinneringen veilig en digitaal</p>
+                <p style="margin-bottom: 0.5rem;">✔ Herstel beschadigde foto's – verwijder krassen, vlekken en scheuren</p>
+                <p style="margin-bottom: 0.5rem;">✔ Inkleuren van zwart-wit foto's – geef oude foto's een nieuw leven in kleur</p>
+            </div>
+            <div class="fr hidden" style="margin-bottom: 1.5rem;">
+                <p style="margin-bottom: 0.5rem;">✔ Scans photo de haute qualité – conservez vos souvenirs en toute sécurité et en format numérique</p>
+                <p style="margin-bottom: 0.5rem;">✔ Restauration de photos endommagées – éliminez les rayures, les taches et les déchirures</p>
+                <p style="margin-bottom: 0.5rem;">✔ Colorisation de photos en noir et blanc – donnez une nouvelle vie en couleur à vos anciennes photos</p>
+            </div>
+            
+            <div class="pricing nl" style="margin: 1.5rem 0; background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <h3 style="margin-bottom: 1rem;">📸 Prijzen:</h3>
+                <p style="margin-bottom: 0.5rem;">1 tot 50 foto's – <span style="font-weight: bold;">Op aanvraag</span></p>
+                <p style="margin-bottom: 0.5rem;">50 tot 200 foto's – <span style="font-weight: bold;">Op aanvraag</span></p>
+                <p style="margin-bottom: 0.5rem;">200+ foto's – <span style="font-weight: bold;">Op aanvraag</span></p>
+                <p style="margin-bottom: 0.5rem;">Extra opties zoals retoucheren en inkleuren op aanvraag</p>
+            </div>
+            <div class="pricing fr hidden" style="margin: 1.5rem 0; background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <h3 style="margin-bottom: 1rem;">📸 Tarifs:</h3>
+                <p style="margin-bottom: 0.5rem;">1 à 50 photos – <span style="font-weight: bold;">Sur demande</span></p>
+                <p style="margin-bottom: 0.5rem;">50 à 200 photos – <span style="font-weight: bold;">Sur demande</span></p>
+                <p style="margin-bottom: 0.5rem;">200+ photos – <span style="font-weight: bold;">Sur demande</span></p>
+                <p style="margin-bottom: 0.5rem;">Options supplémentaires comme la retouche et la colorisation sur demande</p>
+            </div>
+            
+            <div class="nl">
+                <p style="margin-bottom: 0.5rem;">✔ Levering op USB of cloud – eenvoudig terug te kijken en te delen</p>
+                <p style="margin-bottom: 0.5rem;">✔ Spoedservice beschikbaar – voor snelle bewerkingen</p>
+                <p style="margin-bottom: 0.5rem;">✔ Uniek cadeau-idee – verras familieleden met een herstelde foto</p>
+                <p style="margin-bottom: 0.5rem; font-weight: bold;">📞 Neem contact op en bewaar je verleden voor de toekomst!</p>
+            </div>
+            <div class="fr hidden">
+                <p style="margin-bottom: 0.5rem;">✔ Livraison sur USB ou cloud – facile à consulter et à partager</p>
+                <p style="margin-bottom: 0.5rem;">✔ Service express disponible – pour des modifications rapides</p>
+                <p style="margin-bottom: 0.5rem;">✔ Idée cadeau unique – surprenez les membres de votre famille avec une photo restaurée</p>
+                <p style="margin-bottom: 0.5rem; font-weight: bold;">📞 Contactez-nous et préservez votre passé pour l'avenir!</p>
+            </div>
+            
+            <a href="#contact" class="button nl" style="margin-top: 1rem;">Vraag een prijsofferte aan</a>
+            <a href="#contact" class="button fr hidden" style="margin-top: 1rem;">Demander un devis</a>
+        </section>
+        
+        <section class="content">
+            <div>
+                <h2 class="nl">Bewaar uw familiegeschiedenis voor de toekomstige generaties</h2>
+                <h2 class="fr hidden">Préservez votre histoire familiale pour les générations futures</h2>
+                <p class="nl">Onze professionele scan- en inkleurdienst brengt uw oude zwart-wit foto's tot leven met de modernste technologie. Wij zorgen voor het behoud van uw kostbare herinneringen in de allerhoogste kwaliteit.</p>
+                <p class="fr hidden">Notre service professionnel de numérisation et de colorisation donne vie à vos anciennes photos en noir et blanc grâce aux technologies modernes. Nous veillons à préserver vos précieux souvenirs dans la plus haute qualité.</p>
+            </div>
+            <div>
+                <div class="img-placeholder">
+                    <span>Voorbeeld Voor/Na | Exemple Avant/Après</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="benefits">
+            <h3 class="nl">Onze diensten omvatten:</h3>
+            <h3 class="fr hidden">Nos services comprennent:</h3>
+            <ul class="nl" itemprop="hasOfferCatalog" itemscope itemtype="https://schema.org/OfferCatalog">
+                <li itemprop="itemListElement" itemscope itemtype="https://schema.org/Offer">
+                    <span itemprop="itemOffered" itemscope itemtype="https://schema.org/Service">
+                        <meta itemprop="name" content="Hoogwaardige foto scanning" />
+                        Hoogwaardige scanning van foto's, albums en dia's
+                    </span>
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="https://schema.org/Offer">
+                    <span itemprop="itemOffered" itemscope itemtype="https://schema.org/Service">
+                        <meta itemprop="name" content="Professionele foto restauratie" />
+                        Professionele restauratie van beschadigde foto's
+                    </span>
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="https://schema.org/Offer">
+                    <span itemprop="itemOffered" itemscope itemtype="https://schema.org/Service">
+                        <meta itemprop="name" content="AI-inkleuring voor foto's" />
+                        Geavanceerde AI-inkleuring voor natuurgetrouwe resultaten
+                    </span>
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="https://schema.org/Offer">
+                    <span itemprop="itemOffered" itemscope itemtype="https://schema.org/Service">
+                        <meta itemprop="name" content="Digitale foto archivering" />
+                        Digitale archivering op USB-stick, cloud of fotoboeken
+                    </span>
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="https://schema.org/Offer">
+                    <span itemprop="itemOffered" itemscope itemtype="https://schema.org/Service">
+                        <meta itemprop="name" content="Persoonlijke service" />
+                        Persoonlijke service met lokale expertise
+                    </span>
+                </li>
+            </ul>
+            <ul class="fr hidden">
+                <li>Numérisation haute qualité de photos, albums et diapositives</li>
+                <li>Restauration professionnelle de photos endommagées</li>
+                <li>Colorisation AI avancée pour des résultats naturels</li>
+                <li>Archivage numérique sur USB, cloud ou livres photo</li>
+                <li>Service personnalisé avec expertise locale</li>
+            </ul>
+        </section>
+
+        <section class="cta">
+            <h2 class="nl">Ontvang vandaag nog een gratis prijsofferte!</h2>
+            <h2 class="fr hidden">Obtenez un devis gratuit dès aujourd'hui!</h2>
+            <p class="nl">Neem contact met ons op voor een persoonlijk gesprek over uw fotoverzameling</p>
+            <p class="fr hidden">Contactez-nous pour une discussion personnalisée à propos de votre collection de photos</p>
+            <a href="#contact" class="button nl">Contacteer Ons</a>
+            <a href="#contact" class="button fr hidden">Contactez-Nous</a>
+        </section>
+
+        <section class="examples">
+            <div class="example-card">
+                <div class="img-placeholder">
+                    <span>Voorbeeld 1 | Exemple 1</span>
+                </div>
+                <div class="card-content">
+                    <h3 class="nl">Familiefoto Restauratie</h3>
+                    <h3 class="fr hidden">Restauration Photo de Famille</h3>
+                    <p class="nl">Herstellen van scheuren, vlekken en verkleuring</p>
+                    <p class="fr hidden">Correction des déchirures, taches et décoloration</p>
+                </div>
+            </div>
+            <div class="example-card">
+                <div class="img-placeholder">
+                    <span>Voorbeeld 2 | Exemple 2</span>
+                </div>
+                <div class="card-content">
+                    <h3 class="nl">Zwart-Wit naar Kleur</h3>
+                    <h3 class="fr hidden">Noir et Blanc vers Couleur</h3>
+                    <p class="nl">Natuurgetrouwe inkleuring met AI-technologie</p>
+                    <p class="fr hidden">Colorisation naturelle avec technologie AI</p>
+                </div>
+            </div>
+            <div class="example-card">
+                <div class="img-placeholder">
+                    <span>Voorbeeld 3 | Exemple 3</span>
+                </div>
+                <div class="card-content">
+                    <h3 class="nl">Albumdigitalisering</h3>
+                    <h3 class="fr hidden">Numérisation d'Album</h3>
+                    <p class="nl">Complete albums gedigitaliseerd en gerestaureerd</p>
+                    <p class="fr hidden">Albums complets numérisés et restaurés</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="testimonials">
+            <h2 class="nl">Wat onze klanten zeggen</h2>
+            <h2 class="fr hidden">Ce que disent nos clients</h2>
+            
+            <div class="testimonial">
+                <p class="nl">"De kwaliteit van het scanwerk is indrukwekkend, maar wat mij echt versteld deed staan was de inkleuring. Het leek alsof mijn grootouders gisteren nog leefden!"</p>
+                <p class="fr hidden">"La qualité de la numérisation est impressionnante, mais ce qui m'a vraiment étonné c'est la colorisation. On dirait que mes grands-parents vivaient encore hier!"</p>
+                <div class="author nl">— Jan Peeters, Gent</div>
+                <div class="author fr hidden">— Jan Vermeer, Amsterdam</div>
+            </div>
+            
+            <div class="testimonial">
+                <p class="nl">"Wij hadden een zwaar beschadigde trouwfoto van mijn ouders waarvan ik dacht dat ze verloren was. Niet alleen hebben ze hem gerestaureerd, maar ook ingekleurd op een manier die volledig natuurlijk oogt."</p>
+                <p class="fr hidden">"Nous avions une photo de mariage gravement endommagée de mes parents que je pensais avoir perdue. Non seulement ils l'ont restaurée, mais aussi colorisée d'une manière qui semble totalement naturelle."</p>
+                <div class="author nl">— Marie Dupont, Brussel</div>
+                <div class="author fr hidden">— Marie Dupont, Bruxelles</div>
+            </div>
+        </section>
+
+        <section id="contact" itemscope itemtype="https://schema.org/Organization">
+            <meta itemprop="name" content="Foto Scan & Restauratie Dienst" />
+            <h2 class="nl">Contacteer Ons</h2>
+            <h2 class="fr hidden">Contactez-Nous</h2>
+            <p class="nl">Stuur ons een berichtje voor meer informatie of om een afspraak vast te leggen.</p>
+            <p class="fr hidden">Envoyez-nous un message pour plus d'informations ou pour prendre rendez-vous.</p>
+            
+            <form id="contact-form" style="margin-top: 1.5rem;">
+                <div style="margin-bottom: 1rem;">
+                    <label for="name" class="nl">Naam:</label>
+                    <label for="name" class="fr hidden">Nom:</label>
+                    <input type="text" id="name" name="name" style="width: 100%; padding: 0.5rem; margin-top: 0.3rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label for="email" class="nl">E-mail:</label>
+                    <label for="email" class="fr hidden">E-mail:</label>
+                    <input type="email" id="email" name="email" style="width: 100%; padding: 0.5rem; margin-top: 0.3rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label for="message" class="nl">Bericht:</label>
+                    <label for="message" class="fr hidden">Message:</label>
+                    <textarea id="message" name="message" rows="4" style="width: 100%; padding: 0.5rem; margin-top: 0.3rem;"></textarea>
+                </div>
+                <button type="submit" class="button nl">Verzenden</button>
+                <button type="submit" class="button fr hidden">Envoyer</button>
+            </form>
+        </section>
+    </div>
+
+    <footer>
+        <div class="nl" itemscope itemtype="https://schema.org/LocalBusiness">
+            <meta itemprop="name" content="Foto Scan & Restauratie Dienst" />
+            <p>© 2025 <span itemprop="legalName">Foto Scan & Restauratie Dienst</span>. Alle rechten voorbehouden.</p>
+            <p>Adres: <span itemprop="address" itemscope itemtype="https://schema.org/PostalAddress"><span itemprop="streetAddress">Koningstraat 123</span>, <span itemprop="postalCode">1000</span> <span itemprop="addressLocality">Brussel</span></span> | Tel: <span itemprop="telephone">+32 2 123 4567</span> | E-mail: <span itemprop="email">info@fotoscandienst.be</span></p>
+        </div>
+        <div class="fr hidden">
+            <p>© 2025 Service de Numérisation & Restauration Photo. Tous droits réservés.</p>
+            <p>Adresse: Rue Principale 123, 1000 Bruxelles | Tél: +32 2 123 4567 | Email: info@servicenumerisation.be</p>
+        </div>
+    </footer>
+
+    <script>
+        function switchLanguage(lang) {
+            const nlElements = document.querySelectorAll('.nl');
+            const frElements = document.querySelectorAll('.fr');
+            const nlButton = document.getElementById('nl-button');
+            const frButton = document.getElementById('fr-button');
+            
+            if (lang === 'nl') {
+                nlElements.forEach(el => el.classList.remove('hidden'));
+                frElements.forEach(el => el.classList.add('hidden'));
+                nlButton.classList.add('active');
+                frButton.classList.remove('active');
+                document.documentElement.lang = 'nl';
+            } else {
+                nlElements.forEach(el => el.classList.add('hidden'));
+                frElements.forEach(el => el.classList.remove('hidden'));
+                nlButton.classList.remove('active');
+                frButton.classList.add('active');
+                document.documentElement.lang = 'fr';
+            }
+        }
+    </script>
+    <!-- Ajout de contenu caché optimisé pour les moteurs de recherche -->
+    <div style="display:none;">
+        <h2>Oude Foto's Restaureren en Digitaliseren</h2>
+        <p>Specialist in het scannen, digitaliseren, herstellen en inkleuren van oude foto's in België. Wij brengen uw dierbare herinneringen tot leven.</p>
+        <h3>Onze Foto Restauratie Diensten omvatten:</h3>
+        <ul>
+            <li>Zwart-wit foto's inkleuren</li>
+            <li>Oude foto's scannen in hoge resolutie</li>
+            <li>Beschadigde foto's restaureren</li>
+            <li>Fotoalbums digitaliseren</li>
+            <li>Familieportretten herstellen</li>
+            <li>Krassen en scheuren verwijderen uit foto's</li>
+            <li>Oude dia's digitaliseren</li>
+            <li>Fotocollecties archiveren</li>
+        </ul>
+        <p>Wij werken in heel België: Brussel, Antwerpen, Gent, Brugge, Leuven, Hasselt, Luik, Namen, etc.</p>
+    </div>
+</body>
+</html>

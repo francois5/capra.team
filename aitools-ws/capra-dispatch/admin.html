@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administration Bot - Capra Solutions</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- FontAwesome pour les icônes -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body class="bg-gray-100">
+  <!-- Login Screen -->
+  <div id="login-screen" class="login-container">
+    <div class="bg-white p-8 rounded-lg shadow-md w-96">
+      <div class="flex justify-center mb-6">
+        <img src="capra-chat.png" alt="Capra Solutions" class="h-16">
+      </div>
+      <h2 class="text-2xl font-bold mb-6 text-center">Administration Bot</h2>
+      <form id="login-form">
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Email</label>
+          <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" type="email" placeholder="votre@email.com" required>
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Mot de passe</label>
+          <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" type="password" placeholder="••••••••" required>
+        </div>
+        <div class="flex items-center justify-center">
+          <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full" type="submit">
+            Se connecter
+          </button>
+        </div>
+        <p id="login-error" class="text-red-500 text-xs italic mt-4 text-center hidden"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div id="dashboard" style="display: none;">
+    <nav class="bg-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 flex items-center mr-6">
+              <img src="capra-chat.png" alt="Capra Solutions" class="h-8 mr-2">
+              <h1 class="text-xl font-bold">Administration Bot</h1>
+            </div>
+            <div class="hidden md:flex space-x-4">
+              <a href="#" class="nav-link text-blue-500 font-medium px-3 py-2 rounded-md text-sm" data-page="config">Configuration</a>
+              <a href="#" class="nav-link text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm" data-page="prompt">Prompts</a>
+              <a href="#" class="nav-link text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm" data-page="logs">Logs</a>
+            </div>
+          </div>
+          <div class="flex items-center">
+            <span id="user-email" class="mr-4 text-sm text-gray-500"></span>
+            <button id="logout-btn" class="text-sm bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">
+              Déconnexion
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow overflow-hidden">
+      <!-- Configuration Page -->
+      <div id="config-page" class="content-page">
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-xl font-bold mb-6">Configuration du Bot</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="border rounded-lg p-4">
+              <h3 class="text-lg font-semibold mb-4">Informations Générales</h3>
+              <form id="general-config-form">
+                <div class="mb-4">
+                  <label class="block text-gray-700 text-sm font-bold mb-2" for="bot-name">Nom du Bot</label>
+                  <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="bot-name" type="text" value="Capra Assistant">
+                </div>
+                <div class="mb-4">
+                  <label class="block text-gray-700 text-sm font-bold mb-2" for="api-key">API Key Claude</label>
+                  <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="api-key" type="password" placeholder="••••••••">
+                </div>
+                <div class="mb-4">
+                  <label class="block text-gray-700 text-sm font-bold mb-2" for="model-select">Modèle IA</label>
+                  <select class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="model-select">
+                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+                    <option value="claude-3-haiku" selected>Claude 3.5 Haiku</option>
+                    <option value="claude-3-opus">Claude 3 Opus</option>
+                  </select>
+                </div>
+                <div class="flex justify-end">
+                  <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Enregistrer
+                  </button>
+                </div>
+              </form>
+            </div>
+            
+            <div class="border rounded-lg p-4">
+              <h3 class="text-lg font-semibold mb-4">Paramètres du Bot</h3>
+              <form id="bot-params-form">
+                <div class="mb-4">
+                  <label class="block text-gray-700 text-sm font-bold mb-2" for="temperature">Température</label>
+                  <input type="range" min="0" max="1" step="0.1" value="0.7" class="w-full" id="temperature">
+                  <div class="flex justify-between text-xs text-gray-500">
+                    <span>0 (Précis)</span>
+                    <span id="temperature-value">0.7</span>
+                    <span>1 (Créatif)</span>
+                  </div>
+                </div>
+                <div class="mb-4">
+                  <label class="block text-gray-700 text-sm font-bold mb-2" for="max-tokens">Longueur max. réponse</label>
+                  <input type="range" min="100" max="4000" step="100" value="1000" class="w-full" id="max-tokens">
+                  <div class="flex justify-between text-xs text-gray-500">
+                    <span>100</span>
+                    <span id="max-tokens-value">1000</span>
+                    <span>4000</span>
+                  </div>
+                </div>
+                <div class="mb-4">
+                  <label class="flex items-center">
+                    <input type="checkbox" class="mr-2" id="auto-response-enabled" checked>
+                    <span class="text-gray-700 text-sm font-bold">Activer les réponses automatiques</span>
+                  </label>
+                </div>
+                <div class="flex justify-end">
+                  <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Enregistrer
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <div class="border rounded-lg p-4">
+            <h3 class="text-lg font-semibold mb-4">Template Message</h3>
+            <form id="template-form">
+              <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="template-content">Message de premier contact</label>
+                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32" id="template-content">Bonjour, je suis l'assistant virtuel de Capra Solutions. Comment puis-je vous aider aujourd'hui ?</textarea>
+              </div>
+              <div class="flex justify-end">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                  Enregistrer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Prompts Page -->
+      <div id="prompt-page" class="content-page hidden">
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-xl font-bold mb-6">Gestion des Prompts</h2>
+          
+          <div class="mb-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold">Prompts Système</h3>
+              <button id="add-prompt-btn" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm flex items-center">
+                <i class="fas fa-plus mr-1"></i> Ajouter
+              </button>
+            </div>
+            
+            <div class="border rounded-lg p-4">
+              <form id="system-prompt-form">
+                <div class="mb-4">
+                  <label class="block text-gray-700 text-sm font-bold mb-2" for="system-prompt">Prompt principal</label>
+                  <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-64" id="system-prompt">Vous êtes l'assistant virtuel de Capra Solutions, une entreprise spécialisée dans le développement web et les solutions informatiques. Votre rôle est d'aider les clients potentiels à obtenir des informations sur nos services et à prendre rendez-vous avec notre équipe.
+
+Voici les services que nous proposons :
+- Développement de sites web
+- Création d'applications mobiles
+- Solutions e-commerce
+- Consulting IT
+- Support technique
+
+Soyez toujours poli, professionnel et serviable. Évitez de donner des informations sur les tarifs précis, mais proposez plutôt un appel ou un rendez-vous pour discuter des besoins spécifiques du client. N'inventez jamais d'informations que vous ne connaissez pas.</textarea>
+                </div>
+                <div class="flex justify-end">
+                  <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Enregistrer
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Prompts spécifiques</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="specific-prompts-container">
+              <div class="border rounded p-4">
+                <div class="flex justify-between items-start mb-2">
+                  <h4 class="font-medium">Services Web</h4>
+                  <div class="flex space-x-1">
+                    <button class="edit-prompt-btn text-blue-500 hover:text-blue-700">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="delete-prompt-btn text-red-500 hover:text-red-700">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600">Informations détaillées sur nos services de développement web, technologies utilisées et processus de travail.</p>
+              </div>
+              
+              <div class="border rounded p-4">
+                <div class="flex justify-between items-start mb-2">
+                  <h4 class="font-medium">Prise de rendez-vous</h4>
+                  <div class="flex space-x-1">
+                    <button class="edit-prompt-btn text-blue-500 hover:text-blue-700">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="delete-prompt-btn text-red-500 hover:text-red-700">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600">Instructions pour la gestion des demandes de rendez-vous et la collecte d'informations clients.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Logs Page -->
+      <div id="logs-page" class="content-page hidden">
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-xl font-bold mb-6">Logs du Bot</h2>
+          
+          <div class="mb-4 flex justify-between items-center">
+            <div class="flex space-x-2">
+              <button id="refresh-logs-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm flex items-center">
+                <i class="fas fa-sync-alt mr-1"></i> Rafraîchir
+              </button>
+              <select id="log-filter" class="border rounded py-1 px-2 text-sm">
+                <option value="all">Tous les logs</option>
+                <option value="error">Erreurs uniquement</option>
+                <option value="api">Appels API</option>
+                <option value="conversation">Conversations</option>
+              </select>
+            </div>
+            <div>
+              <button id="export-logs-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm flex items-center">
+                <i class="fas fa-download mr-1"></i> Exporter
+              </button>
+            </div>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-2">Date</th>
+                  <th class="px-4 py-2">Type</th>
+                  <th class="px-4 py-2">Source</th>
+                  <th class="px-4 py-2">Message</th>
+                  <th class="px-4 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="logs-container">
+                <tr class="border-b">
+                  <td class="px-4 py-2 whitespace-nowrap">2025-05-05 10:15:22</td>
+                  <td class="px-4 py-2"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">INFO</span></td>
+                  <td class="px-4 py-2">API</td>
+                  <td class="px-4 py-2 max-w-md truncate">Appel à l'API Claude pour le message ID #12345</td>
+                  <td class="px-4 py-2">
+                    <button class="view-log-btn text-blue-500 hover:text-blue-700">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr class="border-b">
+                  <td class="px-4 py-2 whitespace-nowrap">2025-05-05 10:14:38</td>
+                  <td class="px-4 py-2"><span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">ERROR</span></td>
+                  <td class="px-4 py-2">Bot</td>
+                  <td class="px-4 py-2 max-w-md truncate">Erreur lors du traitement de la demande: API key invalide</td>
+                  <td class="px-4 py-2">
+                    <button class="view-log-btn text-blue-500 hover:text-blue-700">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr class="border-b">
+                  <td class="px-4 py-2 whitespace-nowrap">2025-05-05 10:12:15</td>
+                  <td class="px-4 py-2"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">SUCCESS</span></td>
+                  <td class="px-4 py-2">Conversation</td>
+                  <td class="px-4 py-2 max-w-md truncate">Nouveau message reçu de +33612345678</td>
+                  <td class="px-4 py-2">
+                    <button class="view-log-btn text-blue-500 hover:text-blue-700">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="mt-4 flex justify-between items-center">
+            <div class="text-sm text-gray-500">
+              Affichage de 1 à 3 sur 256 logs
+            </div>
+            <div class="flex space-x-1">
+              <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-3 rounded">
+                Précédent
+              </button>
+              <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded">
+                Suivant
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification container -->
+  <div id="notification-container" class="fixed bottom-4 right-4 z-50"></div>
+
+  <!-- Scripts -->
+  <script>
+    // Variables globales
+    const API_URL = 'https://capra-api.onrender.com';
+    let token = localStorage.getItem('admin_token');
+    let currentPage = 'config';
+
+    // Initialisation de l'application
+    function initApp() {
+      setupEventListeners();
+      setupFormListeners();
+      checkAuth();
+    }
+
+    // Configuration des écouteurs d'événements
+    function setupEventListeners() {
+      // Authentification
+      document.getElementById('login-form').addEventListener('submit', handleLogin);
+      document.getElementById('logout-btn').addEventListener('click', logout);
+      
+      // Navigation
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          navigateTo(e.target.dataset.page);
+        });
+      });
+      
+      // Logs
+      document.getElementById('refresh-logs-btn').addEventListener('click', loadLogs);
+      document.getElementById('export-logs-btn').addEventListener('click', exportLogs);
+      document.getElementById('log-filter').addEventListener('change', filterLogs);
+      
+      // Prompts
+      document.getElementById('add-prompt-btn').addEventListener('click', addNewPrompt);
+      document.querySelectorAll('.edit-prompt-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => editPrompt(e.target.closest('.border')));
+      });
+      document.querySelectorAll('.delete-prompt-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => deletePrompt(e.target.closest('.border')));
+      });
+    }
+
+    // Configuration des écouteurs pour les formulaires
+    function setupFormListeners() {
+      // Configuration générale
+      document.getElementById('general-config-form').addEventListener('submit', saveGeneralConfig);
+      document.getElementById('bot-params-form').addEventListener('submit', saveBotParams);
+      document.getElementById('template-form').addEventListener('submit', saveTemplate);
+      document.getElementById('system-prompt-form').addEventListener('submit', saveSystemPrompt);
+      
+      // Ranges interactifs
+      const temperatureRange = document.getElementById('temperature');
+      const temperatureValue = document.getElementById('temperature-value');
+      temperatureRange.addEventListener('input', () => {
+        temperatureValue.textContent = temperatureRange.value;
+      });
+      
+      const maxTokensRange = document.getElementById('max-tokens');
+      const maxTokensValue = document.getElementById('max-tokens-value');
+      maxTokensRange.addEventListener('input', () => {
+        maxTokensValue.textContent = maxTokensRange.value;
+      });
+    }
+
+    // Vérifie si l'utilisateur est connecté
+    function checkAuth() {
+      if (token) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadUserInfo();
+        loadConfigData();
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('dashboard').style.display = 'none';
+      }
+    }
+
+    // Gestion de la connexion
+    async function handleLogin(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const loginError = document.getElementById('login-error');
+      
+      // Vérification spécifique pour francois@capra.solutions
+      if (email !== 'francois@capra.solutions') {
+        loginError.textContent = 'Accès réservé à l\'administrateur';
+        loginError.classList.remove('hidden');
+        return;
+      }
+      
+      try {
+        const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
+        token = response.data.token;
+        localStorage.setItem('admin_token', token);
+        loginError.classList.add('hidden');
+        checkAuth();
+      } catch (error) {
+        console.error('Login error:', error);
+        loginError.textContent = 'Email ou mot de passe incorrect';
+        loginError.classList.remove('hidden');
+      }
+    }
+
+    // Déconnexion
+    function logout() {
+      localStorage.removeItem('admin_token');
+      token = null;
+      checkAuth();
+    }
+
+    // Charger les informations de l'utilisateur
+    async function loadUserInfo() {
+      try {
+        const response = await axios.get(`${API_URL}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        document.getElementById('user-email').textContent = response.data.email;
+      } catch (error) {
+        console.error('Error loading user info:', error);
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+      }
+    }
+
+    // Charger les données de configuration
+    async function loadConfigData() {
+      try {
+        const response = await axios.get(`${API_URL}/api/admin/config`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const config = response.data.config || {};
+        
+        // Remplir les champs avec les données de configuration
+        document.getElementById('bot-name').value = config.botName || 'Capra Assistant';
+        document.getElementById('model-select').value = config.model || 'claude-3-haiku';
+        document.getElementById('temperature').value = config.temperature || 0.7;
+        document.getElementById('temperature-value').textContent = config.temperature || 0.7;
+        document.getElementById('max-tokens').value = config.maxTokens || 1000;
+        document.getElementById('max-tokens-value').textContent = config.maxTokens || 1000;
+        document.getElementById('auto-response-enabled').checked = config.autoResponseEnabled !== false;
+        document.getElementById('template-content').value = config.templateMessage || 'Bonjour, je suis l\'assistant virtuel de Capra Solutions. Comment puis-je vous aider aujourd\'hui ?';
+        document.getElementById('system-prompt').value = config.systemPrompt || '';
+        
+        // Afficher les prompts spécifiques s'ils existent
+        if (config.specificPrompts && Array.isArray(config.specificPrompts)) {
+          renderSpecificPrompts(config.specificPrompts);
+        }
+        
+      } catch (error) {
+        console.error('Error loading config data:', error);
+        showNotification('Erreur lors du chargement de la configuration', 'error');
+      }
+    }
+
+    // Enregistrer la configuration générale
+    async function saveGeneralConfig(e) {
+      e.preventDefault();
+      
+      const botName = document.getElementById('bot-name').value;
+      const apiKey = document.getElementById('api-key').value;
+      const model = document.getElementById('model-select').value;
+      
+      try {
+        await axios.post(`${API_URL}/api/admin/config/general`, {
+          botName,
+          apiKey: apiKey || undefined, // Ne pas envoyer si vide
+          model
+        }, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        showNotification('Configuration générale enregistrée', 'success');
+      } catch (error) {
+        console.error('Error saving general config:', error);
+        showNotification('Erreur lors de l\'enregistrement de la configuration', 'error');
+      }
+    }
+
+    // Enregistrer les paramètres du bot
+    async function saveBotParams(e) {
+      e.preventDefault();
+      
+      const temperature = parseFloat(document.getElementById('temperature').value);
+      const maxTokens = parseInt(document.getElementById('max-tokens').value);
+      const autoResponseEnabled = document.getElementById('auto-response-enabled').checked;
+      
+      try {
+        await axios.post(`${API_URL}/api/admin/config/params`, {
+          temperature,
+          maxTokens,
+          autoResponseEnabled
+        }, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        showNotification('Paramètres du bot enregistrés', 'success');
+      } catch (error) {
+        console.error('Error saving bot params:', error);
+        showNotification('Erreur lors de l\'enregistrement des paramètres', 'error');
+      }
+    }
+
+    // Enregistrer le template de message
+    async function saveTemplate(e) {
+      e.preventDefault();
+      
+      const templateContent = document.getElementById('template-content').value;
+      
+      try {
+        await axios.post(`${API_URL}/api/admin/config/template`, {
+          template: templateContent
+        }, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        showNotification('Template de message enregistré', 'success');
+      } catch (error) {
+        console.error('Error saving template:', error);
+        showNotification('Erreur lors de l\'enregistrement du template', 'error');
+      }
+    }
+
+    // Enregistrer le prompt système
+    async function saveSystemPrompt(e) {
+      e.preventDefault();
+      
+      const systemPrompt = document.getElementById('system-prompt').value;
+      
+      try {
+        await axios.post(`${API_URL}/api/admin/config/system-prompt`, {
+          systemPrompt
+        }, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        showNotification('Prompt système enregistré', 'success');
+      } catch (error) {
+        console.error('Error saving system prompt:', error);
+        showNotification('Erreur lors de l\'enregistrement du prompt système', 'error');
+      }
+    }
+
+    // Ajouter un nouveau prompt spécifique
+    function addNewPrompt() {
+      showPromptModal({
+        isNew: true,
+        title: '',
+        content: ''
+      });
+    }
+
+    // Éditer un prompt existant
+    function editPrompt(promptElement) {
+      const title = promptElement.querySelector('h4').textContent;
+      const content = promptElement.querySelector('p').textContent;
+      
+      showPromptModal({
+        isNew: false,
+        title,
+        content,
+        element: promptElement
+      });
+    }
+
+    // Supprimer un prompt
+    function deletePrompt(promptElement) {
+      const title = promptElement.querySelector('h4').textContent;
+      
+      if (confirm(`Êtes-vous sûr de vouloir supprimer le prompt "${title}" ?`)) {
+        // TODO: Appel API pour supprimer le prompt
+        promptElement.remove();
+        showNotification('Prompt supprimé avec succès', 'success');
+      }
+    }
+
+    // Afficher la modal pour éditer/ajouter un prompt
+    function showPromptModal(promptData) {
+      // Créer la boîte de dialogue modale
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50';
+      modal.id = 'prompt-modal';
+      
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg mx-4">
+          <h3 class="text-lg font-semibold mb-4">${promptData.isNew ? 'Ajouter un prompt' : 'Modifier le prompt'}</h3>
+          <form id="specific-prompt-form">
+            <div class="mb-4">
+              <label class="block text-gray-700 text-sm font-bold mb-2" for="prompt-title">Titre</label>
+              <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                id="prompt-title" type="text" value="${promptData.title}">
+            </div>
+            <div class="mb-6">
+              <label class="block text-gray-700 text-sm font-bold mb-2" for="prompt-content">Contenu</label>
+              <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-40" 
+                id="prompt-content">${promptData.content}</textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+              <button type="button" id="cancel-prompt-edit" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                Annuler
+              </button>
+              <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                ${promptData.isNew ? 'Ajouter' : 'Enregistrer'}
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      // Ajouter la modale au document
+      document.body.appendChild(modal);
+      
+      // Focus sur le premier champ
+      document.getElementById('prompt-title').focus();
+      
+      // Gestionnaire d'événement pour fermer la modale
+      document.getElementById('cancel-prompt-edit').addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+      
+      // Gestionnaire d'événement pour le formulaire
+      document.getElementById('specific-prompt-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('prompt-title').value.trim();
+        const content = document.getElementById('prompt-content').value.trim();
+        
+        if (!title || !content) {
+          alert('Veuillez remplir tous les champs');
+          return;
+        }
+        
+        // TODO: Appel API pour ajouter/modifier le prompt
+        
+        if (promptData.isNew) {
+          addPromptToUI(title, content);
+          showNotification('Prompt ajouté avec succès', 'success');
+        } else {
+          // Mettre à jour l'élément existant
+          promptData.element.querySelector('h4').textContent = title;
+          promptData.element.querySelector('p').textContent = content;
+          showNotification('Prompt mis à jour avec succès', 'success');
+        }
+        
+        // Fermer la modale
+        document.body.removeChild(modal);
+      });
+    }
+
+    // Ajouter un prompt à l'interface
+    function addPromptToUI(title, content) {
+      const container = document.getElementById('specific-prompts-container');
+      
+      const promptElement = document.createElement('div');
+      promptElement.className = 'border rounded p-4';
+      promptElement.innerHTML = `
+        <div class="flex justify-between items-start mb-2">
+          <h4 class="font-medium">${title}</h4>
+          <div class="flex space-x-1">
+            <button class="edit-prompt-btn text-blue-500 hover:text-blue-700">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="delete-prompt-btn text-red-500 hover:text-red-700">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <p class="text-sm text-gray-600">${content}</p>
+      `;
+      
+      // Ajouter les écouteurs d'événements
+      promptElement.querySelector('.edit-prompt-btn').addEventListener('click', () => editPrompt(promptElement));
+      promptElement.querySelector('.delete-prompt-btn').addEventListener('click', () => deletePrompt(promptElement));
+      
+      container.appendChild(promptElement);
+    }
+
+    // Afficher les prompts spécifiques
+    function renderSpecificPrompts(prompts) {
+      const container = document.getElementById('specific-prompts-container');
+      container.innerHTML = '';
+      
+      prompts.forEach(prompt => {
+        addPromptToUI(prompt.title, prompt.content);
+      });
+    }
+
+    // Charger les logs
+    function loadLogs() {
+      // TODO: Appel API pour charger les logs
+      showNotification('Logs rafraîchis', 'info');
+    }
+
+    // Exporter les logs
+    function exportLogs() {
+      // TODO: Appel API pour exporter les logs
+      showNotification('Export des logs en cours...', 'info');
+    }
+
+    // Filtrer les logs
+    function filterLogs() {
+      const filter = document.getElementById('log-filter').value;
+      // TODO: Filtrer les logs selon le critère sélectionné
+      showNotification(`Filtrage sur: ${filter}`, 'info');
+    }
+
+    // Navigation entre les pages
+    function navigateTo(page) {
+      const pages = document.querySelectorAll('.content-page');
+      const navLinks = document.querySelectorAll('.nav-link');
+      
+      pages.forEach(p => {
+        p.classList.add('hidden');
+      });
+      
+      navLinks.forEach(link => {
+        link.classList.remove('text-blue-500', 'font-medium');
+        link.classList.add('text-gray-500');
+      });
+      
+      document.getElementById(`${page}-page`).classList.remove('hidden');
+      document.querySelector(`.nav-link[data-page="${page}"]`).classList.remove('text-gray-500');
+      document.querySelector(`.nav-link[data-page="${page}"]`).classList.add('text-blue-500', 'font-medium');
+      
+      currentPage = page;
+    }
+
+    // Afficher une notification
+    function showNotification(message, type = 'info') {
+      const container = document.getElementById('notification-container');
+      
+      const notification = document.createElement('div');
+      notification.className = `mb-2 p-3 rounded shadow-lg text-sm flex items-center justify-between max-w-md`;
+      
+      // Appliquer le style selon le type de notification
+      switch (type) {
+        case 'success':
+          notification.classList.add('bg-green-100', 'text-green-800', 'border-l-4', 'border-green-500');
+          break;
+        case 'error':
+          notification.classList.add('bg-red-100', 'text-red-800', 'border-l-4', 'border-red-500');
+          break;
+        case 'warning':
+          notification.classList.add('bg-yellow-100', 'text-yellow-800', 'border-l-4', 'border-yellow-500');
+          break;
+        default: // info
+          notification.classList.add('bg-blue-100', 'text-blue-800', 'border-l-4', 'border-blue-500');
+      }
+      
+      notification.innerHTML = `
+        <span>${message}</span>
+        <button class="ml-4 text-gray-500 hover:text-gray-700 close-notification">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      
+      container.appendChild(notification);
+      
+      // Ajouter l'écouteur d'événement pour fermer la notification
+      notification.querySelector('.close-notification').addEventListener('click', () => {
+        container.removeChild(notification);
+      });
+      
+      // Fermer automatiquement après 5 secondes
+      setTimeout(() => {
+        if (notification.parentNode === container) {
+          container.removeChild(notification);
+        }
+      }, 5000);
+    }
+
+    // Initialiser l'application au chargement
+    document.addEventListener('DOMContentLoaded', () => {
+      initApp();
+    });
+  </script>
+</body>
+</html>

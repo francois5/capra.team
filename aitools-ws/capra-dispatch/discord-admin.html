@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administration Bot Discord - Capra Solutions</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- FontAwesome pour les icônes -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body class="bg-gray-100">
+  <!-- Login Screen -->
+  <div id="login-screen" class="login-container">
+    <div class="bg-white p-8 rounded-lg shadow-md w-96">
+      <div class="flex justify-center mb-6">
+        <img src="capra-chat.png" alt="Capra Solutions" class="h-16">
+      </div>
+      <h2 class="text-2xl font-bold mb-6 text-center">Administration Bot Discord</h2>
+      <form id="login-form">
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Email</label>
+          <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" type="email" placeholder="votre@email.com" required>
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Mot de passe</label>
+          <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" type="password" placeholder="••••••••" required>
+        </div>
+        <div class="flex items-center justify-center">
+          <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full" type="submit">
+            Se connecter
+          </button>
+        </div>
+        <p id="login-error" class="text-red-500 text-xs italic mt-4 text-center hidden"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Discord Bot Admin Dashboard -->
+  <div id="dashboard" style="display: none;">
+    <nav class="bg-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 flex items-center mr-6">
+              <img src="capra-chat.png" alt="Capra Solutions" class="h-8 mr-2">
+              <h1 class="text-xl font-bold">Administration Bot Discord</h1>
+            </div>
+            <div class="hidden md:flex space-x-4">
+              <a href="#" class="nav-link text-blue-500 font-medium px-3 py-2 rounded-md text-sm" data-page="status">États & Canaux</a>
+              <a href="#" class="nav-link text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm" data-page="messages">Messages</a>
+              <a href="#" class="nav-link text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm" data-page="logs">Logs</a>
+              <a href="#" class="nav-link text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm" data-page="config">Configuration</a>
+            </div>
+          </div>
+          <div class="flex items-center">
+            <span id="user-email" class="mr-4 text-sm text-gray-500"></span>
+            <button id="logout-btn" class="text-sm bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">
+              Déconnexion
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow overflow-hidden">
+      <!-- Status Page -->
+      <div id="status-page" class="content-page">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">État du Bot Discord</h3>
+            <div id="bot-status-container" class="space-y-4">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Statut:</span>
+                <span id="bot-status" class="font-medium">Chargement...</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Nom d'utilisateur:</span>
+                <span id="bot-username" class="font-medium">-</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Canaux actifs:</span>
+                <span id="active-channels-count" class="font-medium">-</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600">Configuration:</span>
+                <span id="bot-configuration" class="font-medium">-</span>
+              </div>
+              <div class="mt-4">
+                <button id="refresh-status-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full flex items-center justify-center">
+                  <i class="fas fa-sync-alt mr-2"></i> Rafraîchir
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-6 md:col-span-2">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold">Enregistrement de Canal</h3>
+            </div>
+            <form id="register-channel-form" class="mb-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="block text-gray-700 text-sm font-bold mb-2" for="guild-id">ID du Serveur</label>
+                  <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="guild-id" type="text" placeholder="ID du serveur" required>
+                </div>
+                <div>
+                  <label class="block text-gray-700 text-sm font-bold mb-2" for="channel-id">ID du Canal</label>
+                  <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="channel-id" type="text" placeholder="ID du canal" required>
+                </div>
+              </div>
+              <div class="flex space-x-2">
+                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded flex-1">
+                  <i class="fas fa-plus mr-2"></i> Activer le Canal
+                </button>
+                <button type="button" id="unregister-channel-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded flex-1">
+                  <i class="fas fa-minus mr-2"></i> Désactiver le Canal
+                </button>
+              </div>
+            </form>
+            <p id="channel-action-result" class="text-sm text-center hidden"></p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Canaux Discord Actifs</h3>
+            <button id="refresh-channels-btn" class="bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded flex items-center">
+              <i class="fas fa-sync-alt mr-1"></i> Rafraîchir
+            </button>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Serveur</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Canal</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enregistré le</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="active-channels-container" class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">Chargement des canaux actifs...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div id="no-channels-message" class="mt-4 text-center text-gray-500 hidden">
+            Aucun canal actif. Utilisez le formulaire ci-dessus pour activer un canal.
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages Page -->
+      <div id="messages-page" class="content-page hidden">
+        <div class="bg-white rounded-lg shadow p-6">
+          <h3 class="text-lg font-semibold mb-4">Envoyer un Message Discord</h3>
+          
+          <form id="send-message-form">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="message-guild-id">ID du Serveur</label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="message-guild-id" type="text" placeholder="ID du serveur" required>
+              </div>
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="message-channel-id">ID du Canal</label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="message-channel-id" type="text" placeholder="ID du canal" required>
+              </div>
+            </div>
+            
+            <div class="mb-4">
+              <label class="block text-gray-700 text-sm font-bold mb-2" for="message-content">Contenu du Message</label>
+              <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="message-content" rows="4" placeholder="Votre message..." required></textarea>
+            </div>
+            
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
+              <i class="fas fa-paper-plane mr-2"></i> Envoyer
+            </button>
+          </form>
+          
+          <p id="message-send-result" class="mt-4 text-sm text-center hidden"></p>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6 mt-6">
+          <h3 class="text-lg font-semibold mb-4">Templates de Messages</h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="message-templates-container">
+            <div class="border rounded p-3 hover:bg-gray-50 cursor-pointer template-card">
+              <h4 class="font-medium mb-2">Message de Bienvenue</h4>
+              <p class="text-sm text-gray-600 mb-2">Bienvenue dans le serveur Capra Solutions ! Je suis votre assistant et je suis là pour répondre à vos questions.</p>
+              <div class="flex justify-end">
+                <button class="use-template-btn bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">Utiliser</button>
+              </div>
+            </div>
+            
+            <div class="border rounded p-3 hover:bg-gray-50 cursor-pointer template-card">
+              <h4 class="font-medium mb-2">Présentation des Services</h4>
+              <p class="text-sm text-gray-600 mb-2">Capra Solutions propose les services suivants: développement web, applications mobiles, solutions e-commerce, et consulting IT. Comment puis-je vous aider aujourd'hui?</p>
+              <div class="flex justify-end">
+                <button class="use-template-btn bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">Utiliser</button>
+              </div>
+            </div>
+            
+            <div class="border rounded p-3 hover:bg-gray-50 cursor-pointer template-card">
+              <h4 class="font-medium mb-2">Information de Contact</h4>
+              <p class="text-sm text-gray-600 mb-2">Vous pouvez nous contacter par email à info@capra.solutions ou par téléphone au +32 XX XX XX XX pour plus d'informations ou pour prendre rendez-vous.</p>
+              <div class="flex justify-end">
+                <button class="use-template-btn bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">Utiliser</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <button id="add-template-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded w-full">
+              <i class="fas fa-plus mr-2"></i> Ajouter un Template
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Logs Page -->
+      <div id="logs-page" class="content-page hidden">
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-xl font-bold mb-6">Logs du Bot</h2>
+          
+          <div class="mb-6">
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex space-x-2">
+                <button id="refresh-logs-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm flex items-center">
+                  <i class="fas fa-sync-alt mr-1"></i> Rafraîchir
+                </button>
+              </div>
+              <div class="flex space-x-2">
+                <select id="log-level-filter" class="border rounded py-1 px-2 text-sm">
+                  <option value="">Tous les niveaux</option>
+                  <option value="info">Info</option>
+                  <option value="debug">Debug</option>
+                  <option value="warn">Warning</option>
+                  <option value="error">Error</option>
+                </select>
+                <select id="log-period-filter" class="border rounded py-1 px-2 text-sm">
+                  <option value="1h">Dernière heure</option>
+                  <option value="6h">6 dernières heures</option>
+                  <option value="24h" selected>24 dernières heures</option>
+                  <option value="7d">7 derniers jours</option>
+                  <option value="30d">30 derniers jours</option>
+                </select>
+                <input id="log-search" type="text" placeholder="Rechercher..." class="border rounded py-1 px-2 text-sm">
+                <button id="export-logs-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded text-sm flex items-center">
+                  <i class="fas fa-download mr-1"></i> Exporter
+                </button>
+              </div>
+            </div>
+            
+            <!-- Statistiques et résumé des logs -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <h4 class="text-sm font-medium text-blue-800 mb-1">Requêtes totales</h4>
+                <p id="stats-total-requests" class="text-2xl font-bold">0</p>
+              </div>
+              <div class="bg-red-50 p-4 rounded-lg border border-red-100">
+                <h4 class="text-sm font-medium text-red-800 mb-1">Erreurs</h4>
+                <p id="stats-errors" class="text-2xl font-bold">0</p>
+              </div>
+              <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                <h4 class="text-sm font-medium text-green-800 mb-1">Temps moyen</h4>
+                <p id="stats-avg-time" class="text-2xl font-bold">0 ms</p>
+              </div>
+              <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                <h4 class="text-sm font-medium text-yellow-800 mb-1">Succès</h4>
+                <p id="stats-success-rate" class="text-2xl font-bold">0%</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-2">Date</th>
+                  <th class="px-4 py-2">Méthode</th>
+                  <th class="px-4 py-2">Endpoint</th>
+                  <th class="px-4 py-2">Status</th>
+                  <th class="px-4 py-2">Durée</th>
+                  <th class="px-4 py-2">Détails</th>
+                </tr>
+              </thead>
+              <tbody id="logs-container">
+                <tr class="animate-pulse">
+                  <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                    Chargement des logs...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="mt-4 flex justify-between items-center">
+            <div id="logs-pagination-info" class="text-sm text-gray-500">
+              Chargement...
+            </div>
+            <div class="flex space-x-1">
+              <button id="logs-prev-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-3 rounded disabled:opacity-50">
+                Précédent
+              </button>
+              <button id="logs-next-page" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded disabled:opacity-50">
+                Suivant
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal détail de log -->
+        <div id="log-detail-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
+          <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-screen overflow-y-auto">
+            <div class="flex justify-between items-center px-6 py-4 border-b">
+              <h3 class="text-lg font-semibold" id="log-detail-title">Détail du log</h3>
+              <button id="close-log-detail" class="text-gray-500 hover:text-gray-800">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="p-6">
+              <div class="mb-4 grid grid-cols-2 gap-4">
+                <div>
+                  <p class="text-sm text-gray-500">ID de requête:</p>
+                  <p id="log-detail-id" class="font-mono text-sm break-all"></p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Date:</p>
+                  <p id="log-detail-date" class="font-medium"></p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Endpoint:</p>
+                  <p id="log-detail-endpoint" class="font-medium"></p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Status:</p>
+                  <p id="log-detail-status" class="font-medium"></p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Méthode:</p>
+                  <p id="log-detail-method" class="font-medium"></p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Durée:</p>
+                  <p id="log-detail-duration" class="font-medium"></p>
+                </div>
+              </div>
+              
+              <div class="mt-6">
+                <h4 class="font-medium mb-2">Entrées de log</h4>
+                <div id="log-detail-entries" class="bg-gray-50 p-4 rounded-lg max-h-60 overflow-y-auto font-mono text-sm"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Config Page -->
+      <div id="config-page" class="content-page hidden">
+        <div class="bg-white rounded-lg shadow p-6">
+          <h3 class="text-lg font-semibold mb-4">Configuration du Bot Discord</h3>
+          
+          <form id="bot-config-form">
+            <div class="mb-4">
+              <label class="block text-gray-700 text-sm font-bold mb-2" for="discord-token">Token Discord Bot</label>
+              <div class="flex">
+                <input class="shadow appearance-none border rounded-l w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="discord-token" type="password" placeholder="••••••••">
+                <button type="button" id="toggle-token-visibility" class="bg-gray-200 px-3 rounded-r">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">Ne partagez jamais ce token. Si vous le suspectez compromis, régénérez-en un nouveau depuis le portail développeur Discord.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="auto-respond">Mode de Réponse</label>
+                <select class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="auto-respond">
+                  <option value="auto">Automatique (répond à tous les messages)</option>
+                  <option value="mentioned">Uniquement quand mentionné</option>
+                  <option value="manual">Manuel (ne répond pas)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="bot-presence">Statut du Bot</label>
+                <select class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="bot-presence">
+                  <option value="online">En ligne</option>
+                  <option value="idle">Inactif</option>
+                  <option value="dnd">Ne pas déranger</option>
+                  <option value="invisible">Invisible</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="mb-4">
+              <label class="block text-gray-700 text-sm font-bold mb-2" for="activity-text">Texte d'Activité</label>
+              <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="activity-text" type="text" placeholder="Ex: Aide Capra Solutions">
+            </div>
+            
+            <div class="mb-6">
+              <label class="block text-gray-700 text-sm font-bold mb-2" for="bot-prefix">Préfixe de Commande</label>
+              <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="bot-prefix" type="text" placeholder="!" value="!">
+              <p class="text-xs text-gray-500 mt-1">Caractère utilisé avant les commandes du bot (ex: !help)</p>
+            </div>
+            
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
+              Enregistrer la Configuration
+            </button>
+          </form>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6 mt-6">
+          <h3 class="text-lg font-semibold mb-4">Actions</h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button id="restart-bot-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded flex items-center justify-center">
+              <i class="fas fa-redo mr-2"></i> Redémarrer le Bot
+            </button>
+            <button id="test-connection-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded flex items-center justify-center">
+              <i class="fas fa-plug mr-2"></i> Tester la Connexion
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification container -->
+  <div id="notification-container" class="fixed bottom-4 right-4 z-50"></div>
+
+  <!-- Scripts -->
+  <script>
+    // Variables globales
+    const API_URL = 'https://capra-api.onrender.com';
+    let token = localStorage.getItem('admin_token');
+    let currentPage = 'status';
+    let activeChannelsData = [];
+    
+    // Variables pour la pagination des logs
+    let logsCurrentPage = 1;
+    let logsTotalPages = 1;
+    let logsFilter = {
+      level: '',
+      period: '24h',
+      search: ''
+    };
+
+    // Initialisation de l'application
+    function initApp() {
+      setupEventListeners();
+      checkAuth();
+    }
+
+    // Configuration des écouteurs d'événements
+    function setupEventListeners() {
+      // Authentification
+      document.getElementById('login-form').addEventListener('submit', handleLogin);
+      document.getElementById('logout-btn').addEventListener('click', logout);
+      
+      // Navigation
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          navigateTo(e.target.dataset.page);
+        });
+      });
+      
+      // Status Page
+      document.getElementById('refresh-status-btn').addEventListener('click', loadBotStatus);
+      document.getElementById('register-channel-form').addEventListener('submit', registerChannel);
+      document.getElementById('unregister-channel-btn').addEventListener('click', unregisterChannel);
+      document.getElementById('refresh-channels-btn').addEventListener('click', loadActiveChannels);
+      
+      // Messages Page
+      document.getElementById('send-message-form').addEventListener('submit', sendMessage);
+      document.getElementById('add-template-btn').addEventListener('click', addMessageTemplate);
+      
+      // Ajouter des écouteurs aux boutons de template
+      document.querySelectorAll('.use-template-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const templateCard = e.target.closest('.template-card');
+          const templateContent = templateCard.querySelector('p').textContent;
+          document.getElementById('message-content').value = templateContent;
+        });
+      });
+      
+      // Logs Page
+      document.getElementById('refresh-logs-btn').addEventListener('click', loadLogs);
+      document.getElementById('export-logs-btn').addEventListener('click', exportLogs);
+      document.getElementById('log-level-filter').addEventListener('change', updateLogsFilter);
+      document.getElementById('log-period-filter').addEventListener('change', updateLogsFilter);
+      document.getElementById('log-search').addEventListener('input', debounce(updateLogsFilter, 500));
+      document.getElementById('logs-prev-page').addEventListener('click', () => navigateLogsPage(-1));
+      document.getElementById('logs-next-page').addEventListener('click', () => navigateLogsPage(1));
+      document.getElementById('close-log-detail').addEventListener('click', closeLogDetailModal);
+      
+      // Config Page
+      document.getElementById('bot-config-form').addEventListener('submit', saveConfiguration);
+      document.getElementById('toggle-token-visibility').addEventListener('click', togglePasswordVisibility);
+      document.getElementById('restart-bot-btn').addEventListener('click', restartBot);
+      document.getElementById('test-connection-btn').addEventListener('click', testConnection);
+    }
+
+    // Vérifie si l'utilisateur est connecté
+    function checkAuth() {
+      if (token) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadUserInfo();
+        loadBotStatus();
+        loadActiveChannels();
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('dashboard').style.display = 'none';
+      }
+    }
+
+    // Gestion de la connexion
+    async function handleLogin(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const loginError = document.getElementById('login-error');
+      
+      // Vérification spécifique pour francois@capra.solutions
+      if (email !== 'francois@capra.solutions') {
+        loginError.textContent = 'Accès réservé à l\'administrateur';
+        loginError.classList.remove('hidden');
+        return;
+      }
+      
+      try {
+        const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
+        token = response.data.token;
+        localStorage.setItem('admin_token', token);
+        loginError.classList.add('hidden');
+        checkAuth();
+      } catch (error) {
+        console.error('Login error:', error);
+        loginError.textContent = 'Email ou mot de passe incorrect';
+        loginError.classList.remove('hidden');
+      }
+    }
+
+    // Déconnexion
+    function logout() {
+      localStorage.removeItem('admin_token');
+      token = null;
+      checkAuth();
+    }
+
+    // Charger les informations de l'utilisateur
+    async function loadUserInfo() {
+      try {
+        const response = await axios.get(`${API_URL}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        document.getElementById('user-email').textContent = response.data.email;
+      } catch (error) {
+        console.error('Error loading user info:', error);
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+      }
+    }
+
+    // Charger le statut du bot Discord
+    async function loadBotStatus() {
+      try {
+        const response = await axios.get(`${API_URL}/api/discord/status`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const statusData = response.data;
+        const statusElement = document.getElementById('bot-status');
+        const usernameElement = document.getElementById('bot-username');
+        const channelsElement = document.getElementById('active-channels-count');
+        const configElement = document.getElementById('bot-configuration');
+        
+        if (statusData.status === 'success') {
+          // Bot initialisé
+          statusElement.textContent = statusData.ready ? 'En ligne' : 'Hors ligne';
+          statusElement.className = 'font-medium ' + (statusData.ready ? 'text-green-500' : 'text-red-500');
+          
+          usernameElement.textContent = statusData.username || 'N/A';
+          channelsElement.textContent = statusData.activeChannels || '0';
+          configElement.textContent = 'Configuré';
+          configElement.className = 'font-medium text-green-500';
+        } else {
+          // Erreur ou bot non initialisé
+          statusElement.textContent = 'Non initialisé';
+          statusElement.className = 'font-medium text-red-500';
+          
+          usernameElement.textContent = 'N/A';
+          channelsElement.textContent = '0';
+          configElement.textContent = statusData.configured ? 'Configuré mais erreur' : 'Non configuré';
+          configElement.className = 'font-medium ' + (statusData.configured ? 'text-yellow-500' : 'text-red-500');
+        }
+        
+        showNotification('Statut du bot mis à jour', 'info');
+      } catch (error) {
+        console.error('Error loading bot status:', error);
+        
+        const statusElement = document.getElementById('bot-status');
+        statusElement.textContent = 'Erreur de connexion';
+        statusElement.className = 'font-medium text-red-500';
+        
+        showNotification('Erreur lors du chargement du statut du bot', 'error');
+        
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+      }
+    }
+
+    // Charger les canaux actifs
+    async function loadActiveChannels() {
+      try {
+        const response = await axios.get(`${API_URL}/api/discord/active-channels`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const channelsContainer = document.getElementById('active-channels-container');
+        const noChannelsMessage = document.getElementById('no-channels-message');
+        
+        if (response.data.status === 'success') {
+          activeChannelsData = response.data.channels || [];
+          
+          if (activeChannelsData.length === 0) {
+            // Aucun canal actif
+            channelsContainer.innerHTML = '';
+            noChannelsMessage.classList.remove('hidden');
+          } else {
+            // Afficher les canaux actifs
+            noChannelsMessage.classList.add('hidden');
+            channelsContainer.innerHTML = '';
+            
+            activeChannelsData.forEach(channel => {
+              const row = document.createElement('tr');
+              
+              const registeredAt = new Date(channel.registeredAt).toLocaleString();
+              
+              row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${channel.guildId}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${channel.channelId}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${channel.name || 'Non disponible'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${registeredAt}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button class="send-to-channel-btn text-blue-600 hover:text-blue-900 mr-2" data-guild-id="${channel.guildId}" data-channel-id="${channel.channelId}">
+                    <i class="fas fa-paper-plane"></i>
+                  </button>
+                  <button class="unregister-specific-channel-btn text-red-600 hover:text-red-900" data-guild-id="${channel.guildId}" data-channel-id="${channel.channelId}">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              `;
+              
+              channelsContainer.appendChild(row);
+            });
+            
+            // Ajouter des écouteurs d'événements aux boutons
+            document.querySelectorAll('.send-to-channel-btn').forEach(btn => {
+              btn.addEventListener('click', () => {
+                const guildId = btn.dataset.guildId;
+                const channelId = btn.dataset.channelId;
+                
+                // Remplir le formulaire d'envoi de message et naviguer vers la page de messages
+                document.getElementById('message-guild-id').value = guildId;
+                document.getElementById('message-channel-id').value = channelId;
+                navigateTo('messages');
+              });
+            });
+            
+            document.querySelectorAll('.unregister-specific-channel-btn').forEach(btn => {
+              btn.addEventListener('click', async () => {
+                const guildId = btn.dataset.guildId;
+                const channelId = btn.dataset.channelId;
+                
+                if (confirm(`Êtes-vous sûr de vouloir désactiver ce canal (${channelId}) ?`)) {
+                  await unregisterSpecificChannel(guildId, channelId);
+                }
+              });
+            });
+          }
+          
+          // Mettre à jour le nombre de canaux actifs dans le statut
+          document.getElementById('active-channels-count').textContent = activeChannelsData.length;
+        } else {
+          channelsContainer.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-sm text-red-500">Erreur lors du chargement des canaux actifs</td></tr>';
+          showNotification('Erreur lors du chargement des canaux actifs', 'error');
+        }
+      } catch (error) {
+        console.error('Error loading active channels:', error);
+        
+        const channelsContainer = document.getElementById('active-channels-container');
+        channelsContainer.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-sm text-red-500">Erreur lors du chargement des canaux actifs</td></tr>';
+        
+        showNotification('Erreur lors du chargement des canaux actifs', 'error');
+        
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+      }
+    }
+
+    // Enregistrer un canal Discord
+    async function registerChannel(e) {
+      e.preventDefault();
+      
+      const guildId = document.getElementById('guild-id').value.trim();
+      const channelId = document.getElementById('channel-id').value.trim();
+      const resultElement = document.getElementById('channel-action-result');
+      
+      if (!guildId || !channelId) {
+        showNotification('Veuillez remplir tous les champs', 'error');
+        return;
+      }
+      
+      try {
+        resultElement.textContent = 'Activation du canal en cours...';
+        resultElement.className = 'text-sm text-center text-blue-500';
+        resultElement.classList.remove('hidden');
+        
+        const response = await axios.post(`${API_URL}/api/discord/register-channel`, 
+          { guildId, channelId }, 
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        
+        if (response.data.status === 'success') {
+          resultElement.textContent = 'Canal activé avec succès!';
+          resultElement.className = 'text-sm text-center text-green-500';
+          
+          // Rafraîchir la liste des canaux actifs
+          loadActiveChannels();
+          
+          // Réinitialiser le formulaire
+          document.getElementById('guild-id').value = '';
+          document.getElementById('channel-id').value = '';
+          
+          showNotification('Canal Discord activé avec succès', 'success');
+        } else {
+          resultElement.textContent = `Erreur: ${response.data.message}`;
+          resultElement.className = 'text-sm text-center text-red-500';
+          
+          showNotification('Erreur lors de l\'activation du canal', 'error');
+        }
+      } catch (error) {
+        console.error('Error registering channel:', error);
+        
+        resultElement.textContent = `Erreur: ${error.response?.data?.message || error.message}`;
+        resultElement.className = 'text-sm text-center text-red-500';
+        
+        showNotification('Erreur lors de l\'activation du canal', 'error');
+        
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+      }
+    }
+
+    // Désactiver un canal Discord
+    async function unregisterChannel() {
+      const guildId = document.getElementById('guild-id').value.trim();
+      const channelId = document.getElementById('channel-id').value.trim();
+      const resultElement = document.getElementById('channel-action-result');
+      
+      if (!guildId || !channelId) {
+        showNotification('Veuillez remplir tous les champs', 'error');
+        return;
+      }
+      
+      try {
+        resultElement.textContent = 'Désactivation du canal en cours...';
+        resultElement.className = 'text-sm text-center text-blue-500';
+        resultElement.classList.remove('hidden');
+        
+        const response = await axios.post(`${API_URL}/api/discord/unregister-channel`, 
+          { guildId, channelId }, 
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        
+        if (response.data.status === 'success') {
+          resultElement.textContent = 'Canal désactivé avec succès!';
+          resultElement.className = 'text-sm text-center text-green-500';
+          
+          // Rafraîchir la liste des canaux actifs
+          loadActiveChannels();
+          
+          // Réinitialiser le formulaire
+          document.getElementById('guild-id').value = '';
+          document.getElementById('channel-id').value = '';
+          
+          showNotification('Canal Discord désactivé avec succès', 'success');
+        } else {
+          resultElement.textContent = `Erreur: ${response.data.message}`;
+          resultElement.className = 'text-sm text-center text-red-500';
+          
+          showNotification('Erreur lors de la désactivation du canal', 'error');
+        }
+      } catch (error) {
+        console.error('Error unregistering channel:', error);
+        
+        resultElement.textContent = `Erreur: ${error.response?.data?.message || error.message}`;
+        resultElement.className = 'text-sm text-center text-red-500';
+        
+        showNotification('Erreur lors de la désactivation du canal', 'error');
+        
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+      }
+    }
+
+    // Désactiver un canal spécifique depuis la liste
+    async function unregisterSpecificChannel(guildId, channelId) {
+      try {
+        const response = await axios.post(`${API_URL}/api/discord/unregister-channel`, 
+          { guildId, channelId }, 
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        
+        if (response.data.status === 'success') {
+          showNotification('Canal Discord désactivé avec succès', 'success');
+          
+          // Rafraîchir la liste des canaux actifs
+          loadActiveChannels();
+        } else {
+          showNotification(`Erreur: ${response.data.message}`, 'error');
+        }
+      } catch (error) {
+        console.error('Error unregistering channel:', error);
+        showNotification('Erreur lors de la désactivation du canal', 'error');
+        
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+      }
+    }
+
+    // Envoyer un message Discord
+    async function sendMessage(e) {
+      e.preventDefault();
+      
+      const guildId = document.getElementById('message-guild-id').value.trim();
+      const channelId = document.getElementById('message-channel-id').value.trim();
+      const content = document.getElementById('message-content').value.trim();
+      const resultElement = document.getElementById('message-send-result');
+      
+      if (!guildId || !channelId || !content) {
+        showNotification('Veuillez remplir tous les champs', 'error');
+        return;
+      }
+      
+      try {
+        resultElement.textContent = 'Envoi du message en cours...';
+        resultElement.className = 'mt-4 text-sm text-center text-blue-500';
+        resultElement.classList.remove('hidden');
+        
+        const response = await axios.post(`${API_URL}/api/discord/send-message`, 
+          { guildId, channelId, content }, 
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        
+        if (response.data.status === 'success') {
+          resultElement.textContent = 'Message envoyé avec succès!';
+          resultElement.className = 'mt-4 text-sm text-center text-green-500';
+          
+          // Réinitialiser le formulaire
+          document.getElementById('message-content').value = '';
+          
+          showNotification('Message Discord envoyé avec succès', 'success');
+        } else {
+          resultElement.textContent = `Erreur: ${response.data.message}`;
+          resultElement.className = 'mt-4 text-sm text-center text-red-500';
+          
+          showNotification('Erreur lors de l\'envoi du message', 'error');
+        }
+      } catch (error) {
+        console.error('Error sending message:', error);
+        
+        resultElement.textContent = `Erreur: ${error.response?.data?.message || error.message}`;
+        resultElement.className = 'mt-4 text-sm text-center text-red-500';
+        
+        showNotification('Erreur lors de l\'envoi du message', 'error');
+        
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+      }
+    }
+
+    // Ajouter un template de message
+    function addMessageTemplate() {
+      // Créer la boîte de dialogue modale
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50';
+      modal.id = 'template-modal';
+      
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg mx-4">
+          <h3 class="text-lg font-semibold mb-4">Ajouter un Template de Message</h3>
+          <form id="template-form">
+            <div class="mb-4">
+              <label class="block text-gray-700 text-sm font-bold mb-2" for="template-title">Titre</label>
+              <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                id="template-title" type="text" placeholder="Titre du template">
+            </div>
+            <div class="mb-6">
+              <label class="block text-gray-700 text-sm font-bold mb-2" for="template-content">Contenu</label>
+              <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-40" 
+                id="template-content" placeholder="Contenu du message"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+              <button type="button" id="cancel-template" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                Annuler
+              </button>
+              <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Ajouter
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      // Ajouter la modale au document
+      document.body.appendChild(modal);
+      
+      // Focus sur le premier champ
+      document.getElementById('template-title').focus();
+      
+      // Gestionnaire d'événement pour fermer la modale
+      document.getElementById('cancel-template').addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+      
+      // Gestionnaire d'événement pour le formulaire
+      document.getElementById('template-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('template-title').value.trim();
+        const content = document.getElementById('template-content').value.trim();
+        
+        if (!title || !content) {
+          alert('Veuillez remplir tous les champs');
+          return;
+        }
+        
+        // Ajouter le template à l'interface
+        const templatesContainer = document.getElementById('message-templates-container');
+        const templateCard = document.createElement('div');
+        templateCard.className = 'border rounded p-3 hover:bg-gray-50 cursor-pointer template-card';
+        
+        templateCard.innerHTML = `
+          <h4 class="font-medium mb-2">${title}</h4>
+          <p class="text-sm text-gray-600 mb-2">${content}</p>
+          <div class="flex justify-end">
+            <button class="use-template-btn bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">Utiliser</button>
+          </div>
+        `;
+        
+        // Ajouter l'écouteur d'événement
+        templateCard.querySelector('.use-template-btn').addEventListener('click', () => {
+          document.getElementById('message-content').value = content;
+        });
+        
+        templatesContainer.appendChild(templateCard);
+        
+        // Fermer la modale
+        document.body.removeChild(modal);
+        
+        showNotification('Template ajouté avec succès', 'success');
+      });
+    }
+
+    // Charger les logs système
+    async function loadLogs() {
+      try {
+        const logsContainer = document.getElementById('logs-container');
+        logsContainer.innerHTML = `
+          <tr class="animate-pulse">
+            <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+              Chargement des logs...
+            </td>
+          </tr>
+        `;
+        
+        // Construire les paramètres de requête
+        const params = new URLSearchParams({
+          page: logsCurrentPage,
+          limit: 20 // Nombre de logs par page
+        });
+        
+        // Ajouter les filtres
+        if (logsFilter.level) params.append('level', logsFilter.level);
+        if (logsFilter.period) params.append('period', logsFilter.period);
+        if (logsFilter.search) params.append('search', logsFilter.search);
+        
+        // Obtenir les logs
+        const response = await axios.get(`${API_URL}/api/logs?${params.toString()}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.data.status === 'success') {
+          // Mettre à jour les statistiques
+          loadLogStats();
+          
+          // Afficher les logs
+          const logs = response.data.data;
+          const pagination = response.data.pagination;
+          
+          // Mettre à jour les variables de pagination
+          logsTotalPages = pagination.pages;
+          
+          // Mettre à jour les boutons de pagination
+          updateLogsPagination(pagination);
+          
+          // Afficher les logs
+          if (logs.length === 0) {
+            logsContainer.innerHTML = `
+              <tr>
+                <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                  Aucun log trouvé pour cette période
+                </td>
+              </tr>
+            `;
+          } else {
+            logsContainer.innerHTML = '';
+            
+            logs.forEach(log => {
+              const row = document.createElement('tr');
+              row.className = 'border-b hover:bg-gray-50';
+              
+              // Formater la date
+              const createdAt = new Date(log.createdAt).toLocaleString();
+              
+              // Formater la durée
+              const duration = log.duration ? `${log.duration} ms` : 'N/A';
+              
+              // Colorier le status code
+              let statusClass = 'text-gray-600';
+              if (log.statusCode) {
+                if (log.statusCode < 300) statusClass = 'text-green-600';
+                else if (log.statusCode < 400) statusClass = 'text-blue-600';
+                else if (log.statusCode < 500) statusClass = 'text-yellow-600';
+                else statusClass = 'text-red-600';
+              }
+              
+              row.innerHTML = `
+                <td class="px-4 py-3 whitespace-nowrap text-sm">${createdAt}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm">${log.method || 'N/A'}</td>
+                <td class="px-4 py-3 text-sm max-w-xs truncate">${log.endpoint || 'N/A'}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm ${statusClass} font-medium">${log.statusCode || 'N/A'}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm">${duration}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm">
+                  <button class="view-log-detail-btn text-blue-500 hover:text-blue-700" data-request-id="${log.requestId}">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </td>
+              `;
+              
+              logsContainer.appendChild(row);
+            });
+            
+            // Ajouter des écouteurs d'événements aux boutons de détail
+            document.querySelectorAll('.view-log-detail-btn').forEach(btn => {
+              btn.addEventListener('click', () => {
+                const requestId = btn.dataset.requestId;
+                showLogDetail(requestId);
+              });
+            });
+          }
+        } else {
+          logsContainer.innerHTML = `
+            <tr>
+              <td colspan="6" class="px-4 py-4 text-center text-red-500">
+                Erreur lors du chargement des logs
+              </td>
+            </tr>
+          `;
+          
+          showNotification('Erreur lors du chargement des logs', 'error');
+        }
+      } catch (error) {
+        console.error('Error loading logs:', error);
+        
+        const logsContainer = document.getElementById('logs-container');
+        logsContainer.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-4 py-4 text-center text-red-500">
+              Erreur lors du chargement des logs: ${error.response?.data?.message || error.message}
+            </td>
+          </tr>
+        `;
+        
+        showNotification('Erreur lors du chargement des logs', 'error');
+        
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+      }
+    }
+
+    // Charger les statistiques des logs
+    async function loadLogStats() {
+      try {
+        const response = await axios.get(`${API_URL}/api/logs/stats/summary?period=${logsFilter.period}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.data.status === 'success') {
+          const stats = response.data.data;
+          
+          // Mettre à jour les compteurs
+          document.getElementById('stats-total-requests').textContent = stats.totalRequests;
+          document.getElementById('stats-errors').textContent = stats.errors;
+          document.getElementById('stats-avg-time').textContent = `${Math.round(stats.avgDuration || 0)} ms`;
+          
+          // Calculer le taux de succès
+          const successRate = stats.totalRequests ? 
+            Math.round(((stats.totalRequests - stats.errors) / stats.totalRequests) * 100) : 0;
+          document.getElementById('stats-success-rate').textContent = `${successRate}%`;
+        }
+      } catch (error) {
+        console.error('Error loading log stats:', error);
+      }
+    }
+
+    // Mettre à jour les filtres de logs
+    function updateLogsFilter() {
+      logsFilter.level = document.getElementById('log-level-filter').value;
+      logsFilter.period = document.getElementById('log-period-filter').value;
+      logsFilter.search = document.getElementById('log-search').value;
+      
+      // Réinitialiser la pagination
+      logsCurrentPage = 1;
+      
+      // Charger les logs avec les nouveaux filtres
+      loadLogs();
+    }
+
+    // Navigation dans les pages de logs
+    function navigateLogsPage(direction) {
+      const newPage = logsCurrentPage + direction;
+      
+      // Vérifier que la page est valide
+      if (newPage < 1 || newPage > logsTotalPages) return;
+      
+      // Mettre à jour la page courante
+      logsCurrentPage = newPage;
+      
+      // Charger les logs de la nouvelle page
+      loadLogs();
+    }
+
+    // Mettre à jour les contrôles de pagination
+    function updateLogsPagination(pagination) {
+      const { total, page, pages, limit } = pagination;
+      
+      // Mettre à jour l'information de pagination
+      const start = (page - 1) * limit + 1;
+      const end = Math.min(page * limit, total);
+      document.getElementById('logs-pagination-info').textContent = 
+        `Affichage de ${start} à ${end} sur ${total} logs`;
+      
+      // Mettre à jour l'état des boutons
+      document.getElementById('logs-prev-page').disabled = page <= 1;
+      document.getElementById('logs-next-page').disabled = page >= pages;
+    }
+
+    // Afficher les détails d'un log
+    async function showLogDetail(requestId) {
+      try {
+        const response = await axios.get(`${API_URL}/api/logs/${requestId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.data.status === 'success') {
+          const log = response.data.data;
+          
+          // Mettre à jour les détails
+          document.getElementById('log-detail-id').textContent = log.requestId;
+          document.getElementById('log-detail-date').textContent = new Date(log.createdAt).toLocaleString();
+          document.getElementById('log-detail-endpoint').textContent = log.endpoint || 'N/A';
+          document.getElementById('log-detail-status').textContent = log.statusCode || 'N/A';
+          document.getElementById('log-detail-method').textContent = log.method || 'N/A';
+          document.getElementById('log-detail-duration').textContent = log.duration ? `${log.duration} ms` : 'N/A';
+          
+          // Formater les entrées de log
+          const entriesContainer = document.getElementById('log-detail-entries');
+          entriesContainer.innerHTML = '';
+          
+          if (log.entries && log.entries.length > 0) {
+            log.entries.forEach(entry => {
+              const entryEl = document.createElement('div');
+              entryEl.className = 'mb-2 pb-2 border-b border-gray-200';
+              
+              // Déterminer la couleur en fonction du niveau
+              let levelClass = 'text-blue-600';
+              switch (entry.level) {
+                case 'error': levelClass = 'text-red-600'; break;
+                case 'warn': levelClass = 'text-yellow-600'; break;
+                case 'debug': levelClass = 'text-purple-600'; break;
+              }
+              
+              // Formater la date
+              const timestamp = new Date(entry.timestamp).toLocaleTimeString();
+              
+              entryEl.innerHTML = `
+                <div class="flex items-start">
+                  <span class="text-xs ${levelClass} font-medium w-14">${entry.level.toUpperCase()}</span>
+                  <span class="text-xs text-gray-500 w-24">[${timestamp}]</span>
+                  <span class="text-xs flex-grow">${entry.message}</span>
+                </div>
+              `;
+              
+              // Ajouter les métadonnées si présentes
+              if (entry.metadata && Object.keys(entry.metadata).length > 0) {
+                const metadataEl = document.createElement('div');
+                metadataEl.className = 'ml-38 mt-1 text-xs text-gray-500';
+                metadataEl.textContent = JSON.stringify(entry.metadata, null, 2);
+                entryEl.appendChild(metadataEl);
+              }
+              
+              entriesContainer.appendChild(entryEl);
+            });
+          } else {
+            entriesContainer.innerHTML = '<p class="text-gray-500">Aucune entrée de log disponible</p>';
+          }
+          
+          // Afficher la modale
+          document.getElementById('log-detail-modal').classList.remove('hidden');
+        } else {
+          showNotification('Erreur lors du chargement des détails du log', 'error');
+        }
+      } catch (error) {
+        console.error('Error loading log details:', error);
+        showNotification('Erreur lors du chargement des détails du log', 'error');
+      }
+    }
+
+    // Fermer la modale de détail de log
+    function closeLogDetailModal() {
+      document.getElementById('log-detail-modal').classList.add('hidden');
+    }
+
+    // Exporter les logs
+    function exportLogs() {
+      // Utiliser les filtres actuels
+      const params = new URLSearchParams();
+      if (logsFilter.level) params.append('level', logsFilter.level);
+      if (logsFilter.period) params.append('period', logsFilter.period);
+      if (logsFilter.search) params.append('search', logsFilter.search);
+      
+      // Augmenter la limite pour l'export
+      params.append('limit', '1000');
+      
+      // URL complète
+      const exportUrl = `${API_URL}/api/logs?${params.toString()}&export=true`;
+      
+      // Télécharger via une requête AJAX
+      showNotification('Export des logs en cours...', 'info');
+      
+      axios.get(exportUrl, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        responseType: 'blob'
+      })
+      .then(response => {
+        // Créer un lien de téléchargement
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `logs-capra-${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        
+        showNotification('Export des logs terminé', 'success');
+      })
+      .catch(error => {
+        console.error('Error exporting logs:', error);
+        showNotification('Erreur lors de l\'export des logs', 'error');
+      });
+    }
+
+    // Enregistrer la configuration du bot
+    async function saveConfiguration(e) {
+      e.preventDefault();
+      
+      const token = document.getElementById('discord-token').value.trim();
+      const autoRespond = document.getElementById('auto-respond').value;
+      const botPresence = document.getElementById('bot-presence').value;
+      const activityText = document.getElementById('activity-text').value.trim();
+      const botPrefix = document.getElementById('bot-prefix').value.trim();
+      
+      // Cette fonction est simulée car l'API actuelle ne prend pas en charge cette fonctionnalité
+      showNotification('Configuration enregistrée (simulée)', 'success');
+    }
+
+    // Basculer la visibilité du token
+    function togglePasswordVisibility() {
+      const tokenInput = document.getElementById('discord-token');
+      const toggleButton = document.getElementById('toggle-token-visibility');
+      
+      if (tokenInput.type === 'password') {
+        tokenInput.type = 'text';
+        toggleButton.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      } else {
+        tokenInput.type = 'password';
+        toggleButton.innerHTML = '<i class="fas fa-eye"></i>';
+      }
+    }
+
+    // Redémarrer le bot Discord
+    function restartBot() {
+      // Cette fonction est simulée car l'API actuelle ne prend pas en charge cette fonctionnalité
+      showNotification('Redémarrage du bot demandé (simulé)', 'info');
+    }
+
+    // Tester la connexion Discord
+    function testConnection() {
+      // Cette fonction est simulée car l'API actuelle ne prend pas en charge cette fonctionnalité
+      loadBotStatus();
+    }
+
+    // Navigation entre les pages
+    function navigateTo(page) {
+      const pages = document.querySelectorAll('.content-page');
+      const navLinks = document.querySelectorAll('.nav-link');
+      
+      pages.forEach(p => {
+        p.classList.add('hidden');
+      });
+      
+      navLinks.forEach(link => {
+        link.classList.remove('text-blue-500', 'font-medium');
+        link.classList.add('text-gray-500');
+      });
+      
+      document.getElementById(`${page}-page`).classList.remove('hidden');
+      document.querySelector(`.nav-link[data-page="${page}"]`).classList.remove('text-gray-500');
+      document.querySelector(`.nav-link[data-page="${page}"]`).classList.add('text-blue-500', 'font-medium');
+      
+      currentPage = page;
+      
+      // Chargement spécifique à la page
+      if (page === 'logs') {
+        loadLogs();
+      }
+    }
+
+    // Fonction pour débouncer les événements (évite les appels trop fréquents)
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+      };
+    }
+
+    // Afficher une notification
+    function showNotification(message, type = 'info') {
+      const container = document.getElementById('notification-container');
+      
+      const notification = document.createElement('div');
+      notification.className = `mb-2 p-3 rounded shadow-lg text-sm flex items-center justify-between max-w-md`;
+      
+      // Appliquer le style selon le type de notification
+      switch (type) {
+        case 'success':
+          notification.classList.add('bg-green-100', 'text-green-800', 'border-l-4', 'border-green-500');
+          break;
+        case 'error':
+          notification.classList.add('bg-red-100', 'text-red-800', 'border-l-4', 'border-red-500');
+          break;
+        case 'warning':
+          notification.classList.add('bg-yellow-100', 'text-yellow-800', 'border-l-4', 'border-yellow-500');
+          break;
+        default: // info
+          notification.classList.add('bg-blue-100', 'text-blue-800', 'border-l-4', 'border-blue-500');
+      }
+      
+      notification.innerHTML = `
+        <span>${message}</span>
+        <button class="ml-4 text-gray-500 hover:text-gray-700 close-notification">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      
+      container.appendChild(notification);
+      
+      // Ajouter l'écouteur d'événement pour fermer la notification
+      notification.querySelector('.close-notification').addEventListener('click', () => {
+        container.removeChild(notification);
+      });
+      
+      // Fermer automatiquement après 5 secondes
+      setTimeout(() => {
+        if (notification.parentNode === container) {
+          container.removeChild(notification);
+        }
+      }, 5000);
+    }
+
+    // Initialiser l'application au chargement
+    document.addEventListener('DOMContentLoaded', () => {
+      initApp();
+    });
+  </script>
+</body>
+</html>
