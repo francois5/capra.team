@@ -1700,7 +1700,7 @@
                     setTimeout(() => {
                         typingIndicator.style.display = 'none';
                         // Ajouter la réponse du bot
-                        addMessage(data.message || "Message traité avec succès", 'bot');
+                        addMessage(data.response || "Message traité avec succès", 'bot');
                     }, 1000);
                 } catch (error) {
                     console.error('Erreur lors de l\'envoi du message:', error);
