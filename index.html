@@ -1528,36 +1528,58 @@
     </script>
 
     <script>
-        // Contact form temporary email handler
+        // Contact form handler via Neutrum API
         document.addEventListener('DOMContentLoaded', function() {
             const contactForm = document.getElementById('contact-form');
             if (contactForm) {
-                contactForm.addEventListener('submit', function(e) {
+                contactForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
 
                     const name = document.getElementById('name').value;
                     const email = document.getElementById('email').value;
                     const message = document.getElementById('message').value;
 
-                    // Create mailto link with form data
-                    const subject = encodeURIComponent(`Contact Capra Solutions - Message de ${name}`);
-                    const body = encodeURIComponent(`Nom: ${name}\nEmail: ${email}\n\nMessage:\n${message}`);
-                    const mailtoLink = `mailto:frvaneesb@gmail.com?subject=${subject}&body=${body}`;
-
-                    // Open email client
-                    window.location.href = mailtoLink;
-
-                    // Show success message
                     const button = contactForm.querySelector('button[type="submit"]');
                     const originalText = button.textContent;
-                    button.textContent = 'Email ouvert dans votre client mail';
-                    button.disabled = true;
 
-                    setTimeout(() => {
-                        button.textContent = originalText;
-                        button.disabled = false;
-                        contactForm.reset();
-                    }, 3000);
+                    // Disable button and show loading state
+                    button.disabled = true;
+                    button.textContent = 'Envoi en cours...';
+
+                    try {
+                        // Send via Neutrum API contact endpoint
+                        const response = await fetch('https://api.neutrum.be/send-contact-email', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                name: name,
+                                email: email,
+                                message: message
+                            })
+                        });
+
+                        if (response.ok) {
+                            button.textContent = 'Message envoyé avec succès !';
+                            contactForm.reset();
+
+                            setTimeout(() => {
+                                button.textContent = originalText;
+                                button.disabled = false;
+                            }, 3000);
+                        } else {
+                            throw new Error('Erreur lors de l\'envoi');
+                        }
+                    } catch (error) {
+                        console.error('Erreur:', error);
+                        button.textContent = 'Erreur, veuillez réessayer';
+
+                        setTimeout(() => {
+                            button.textContent = originalText;
+                            button.disabled = false;
+                        }, 3000);
+                    }
                 });
             }
         });
