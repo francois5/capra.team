@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créateur d'Aventure - L'Aventure d'Elian</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #E0E0E0;
+        }
+        .gradient-bg {
+            background-image: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%);
+        }
+        .btn {
+            @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition duration-300;
+        }
+        .input-field {
+            @apply w-full p-3 rounded-lg text-gray-900 bg-gray-100 border border-gray-300 mb-3;
+        }
+        .scene-card {
+            @apply bg-gray-800 p-4 rounded-lg mb-4 border-2 border-gray-700 hover:border-blue-500 cursor-pointer transition;
+        }
+        .scene-card.active {
+            @apply border-blue-500;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <div class="max-w-6xl mx-auto gradient-bg rounded-2xl shadow-2xl p-6 sm:p-10">
+        <header class="mb-8 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-white">Créateur d'Aventure</h1>
+            <a href="index.html" class="text-blue-400 hover:text-blue-300">← Retour</a>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Panneau de gauche: Liste des scènes -->
+            <div class="lg:col-span-1">
+                <div class="bg-gray-800 rounded-xl p-4">
+                    <h2 class="text-xl font-bold mb-4">Scènes</h2>
+                    <button id="add-scene-btn" class="btn w-full mb-4">+ Nouvelle Scène</button>
+                    <div id="scenes-list" class="space-y-2 max-h-96 overflow-y-auto">
+                        <!-- Liste des scènes -->
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 rounded-xl p-4 mt-4">
+                    <h2 class="text-xl font-bold mb-4">Actions</h2>
+                    <button id="export-json-btn" class="btn w-full mb-2">📥 Exporter JSON</button>
+                    <button id="import-json-btn" class="btn w-full mb-2">📤 Importer JSON</button>
+                    <input type="file" id="import-file" accept=".json" class="hidden">
+                    <button id="preview-btn" class="btn w-full">👁️ Prévisualiser</button>
+                </div>
+            </div>
+
+            <!-- Panneau central: Éditeur de scène -->
+            <div class="lg:col-span-2">
+                <div id="editor-panel" class="bg-gray-800 rounded-xl p-6">
+                    <div id="no-scene-message" class="text-center text-gray-400 py-8">
+                        Créez ou sélectionnez une scène pour commencer
+                    </div>
+
+                    <div id="scene-editor" class="hidden">
+                        <div class="mb-4">
+                            <label class="block font-semibold mb-2">ID de la scène*</label>
+                            <input type="text" id="scene-id" class="input-field" placeholder="ex: start, scene1, combat_dragon">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block font-semibold mb-2">Texte de la scène*</label>
+                            <textarea id="scene-text" rows="8" class="input-field"
+                                      placeholder="Décrivez la scène. Utilisez **texte** pour mettre en gras."></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block font-semibold mb-2">Image (URL)</label>
+                            <input type="text" id="scene-image" class="input-field" placeholder="https://...">
+                        </div>
+
+                        <h3 class="text-lg font-bold mb-3 mt-6">Choix / Boutons</h3>
+                        <div id="choices-editor" class="space-y-4 mb-4">
+                            <!-- Choix seront ajoutés ici -->
+                        </div>
+                        <button id="add-choice-btn" class="btn">+ Ajouter un choix</button>
+
+                        <div class="flex gap-4 mt-6">
+                            <button id="save-scene-btn" class="btn flex-1">💾 Sauvegarder</button>
+                            <button id="delete-scene-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex-1">
+                                🗑️ Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template pour un choix -->
+    <template id="choice-template">
+        <div class="choice-item bg-gray-700 p-4 rounded-lg">
+            <div class="mb-2">
+                <label class="block text-sm font-semibold mb-1">Texte du bouton*</label>
+                <input type="text" class="choice-text input-field" placeholder="ex: Aller au nord">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Type d'action</label>
+                    <select class="choice-action-type input-field">
+                        <option value="goto">Aller à une scène</option>
+                        <option value="skill">Test de compétence</option>
+                        <option value="combat">Combat</option>
+                        <option value="enigma">Énigme</option>
+                    </select>
+                </div>
+                <div class="choice-destination-container">
+                    <label class="block text-sm font-semibold mb-1">Destination</label>
+                    <input type="text" class="choice-destination input-field" placeholder="ID de la scène">
+                </div>
+            </div>
+
+            <div class="choice-skill-container hidden">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Compétence</label>
+                        <select class="choice-skill input-field">
+                            <option value="magie">Magie</option>
+                            <option value="astuce">Astuce</option>
+                            <option value="combat">Combat</option>
+                            <option value="foi">Foi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Difficulté</label>
+                        <input type="number" class="choice-difficulty input-field" value="8" min="1">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Si succès →</label>
+                        <input type="text" class="choice-success input-field" placeholder="ID scène">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Si échec →</label>
+                        <input type="text" class="choice-failure input-field" placeholder="ID scène">
+                    </div>
+                </div>
+            </div>
+
+            <div class="choice-combat-container hidden">
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Nom ennemi</label>
+                        <input type="text" class="enemy-name input-field" placeholder="Gobelin">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">PV</label>
+                        <input type="number" class="enemy-hp input-field" value="6" min="1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Dés</label>
+                        <input type="number" class="enemy-dice input-field" value="1" min="1">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Si victoire →</label>
+                        <input type="text" class="combat-success input-field" placeholder="ID scène">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Si défaite →</label>
+                        <input type="text" class="combat-failure input-field" placeholder="ID scène">
+                    </div>
+                </div>
+            </div>
+
+            <div class="choice-enigma-container hidden">
+                <div class="mb-2">
+                    <label class="block text-sm font-semibold mb-1">Question</label>
+                    <textarea class="enigma-question input-field" rows="2" placeholder="Énigme..."></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Réponse</label>
+                        <input type="text" class="enigma-answer input-field" placeholder="SILENCE">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Valeur</label>
+                        <input type="number" class="enigma-value input-field" value="67" min="1">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Si succès →</label>
+                        <input type="text" class="enigma-success input-field" placeholder="ID scène">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Si échec →</label>
+                        <input type="text" class="enigma-failure input-field" placeholder="ID scène">
+                    </div>
+                </div>
+            </div>
+
+            <button class="remove-choice-btn bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded mt-2 text-sm">
+                Supprimer ce choix
+            </button>
+        </div>
+    </template>
+
+    <script src="creator.js"></script>
+</body>
+</html>

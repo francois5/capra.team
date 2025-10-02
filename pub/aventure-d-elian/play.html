@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jouer - L'Aventure d'Elian</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #E0E0E0;
+        }
+        .gradient-bg {
+            background-image: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%);
+        }
+        .btn {
+            @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105;
+        }
+        .btn:disabled {
+            @apply bg-gray-500 cursor-not-allowed opacity-50;
+        }
+        .stat-bar {
+            @apply bg-gray-700 rounded-full h-2.5;
+        }
+        .stat-fill {
+            height: 100%;
+            background-image: linear-gradient(to right, #4ade80, #34d399);
+            transition: width 0.5s ease-in-out;
+            @apply rounded-full;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center p-4 sm:p-8">
+    <div class="w-full max-w-4xl gradient-bg rounded-2xl shadow-2xl p-6 sm:p-10 mb-8">
+        <header class="mb-8 p-4 bg-gray-800 rounded-xl shadow-inner">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold text-white">Jouer une Aventure</h1>
+                <a href="index.html" class="text-blue-400 hover:text-blue-300">← Retour</a>
+            </div>
+
+            <div id="character-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm sm:text-base mb-4 hidden">
+                <!-- Stats injectées par JS -->
+            </div>
+
+            <div id="player-hp-display" class="hidden">
+                <p class="font-semibold text-red-400 mb-2">Vie</p>
+                <div class="bg-gray-700 rounded-full h-4">
+                    <div id="player-hp-bar" class="h-full rounded-full transition-all duration-500"
+                         style="background-image: linear-gradient(to right, #ef4444, #f97316); width: 100%;">
+                    </div>
+                </div>
+                <p id="player-hp-text" class="text-sm mt-1"></p>
+            </div>
+        </header>
+
+        <div id="adventure-selector" class="mb-8">
+            <label for="adventure-select" class="block mb-2 font-semibold">Sélectionner une aventure:</label>
+            <select id="adventure-select" class="w-full p-3 rounded-lg text-gray-900 bg-gray-100 border border-gray-300 mb-4">
+                <option value="">-- Choisir --</option>
+            </select>
+            <button id="load-adventure-btn" class="btn w-full mb-4" disabled>Charger l'aventure</button>
+            <div class="mb-4">
+                <label for="custom-json" class="block mb-2 font-semibold">Ou charger un fichier JSON:</label>
+                <input type="file" id="custom-json" accept=".json"
+                       class="w-full p-3 rounded-lg text-gray-900 bg-gray-100 border border-gray-300">
+            </div>
+        </div>
+
+        <div id="game-container" class="hidden">
+            <div id="story-text" class="text-lg leading-relaxed mb-8 p-4 bg-gray-800 rounded-xl shadow-inner">
+                <!-- Texte de l'histoire -->
+            </div>
+
+            <div id="choices-container" class="flex flex-col space-y-4">
+                <!-- Boutons de choix -->
+            </div>
+
+            <div id="combat-section" class="hidden mt-8 p-4 bg-gray-800 rounded-xl shadow-inner">
+                <h3 id="combat-title" class="text-xl font-bold text-center mb-4">Combat</h3>
+                <div id="combat-info" class="text-center mb-4">
+                    <p id="enemy-name" class="font-semibold text-red-400 mb-2"></p>
+                    <div class="bg-gray-700 rounded-full h-4 mb-2">
+                        <div id="enemy-hp-bar" class="h-full rounded-full transition-all duration-500"
+                             style="background-image: linear-gradient(to right, #ef4444, #f97316); width: 100%;">
+                        </div>
+                    </div>
+                    <p id="enemy-hp-text" class="text-sm"></p>
+                </div>
+                <div id="combat-log" class="bg-gray-700 p-4 rounded-lg h-32 overflow-y-auto mb-4 text-sm"></div>
+                <button id="combat-action-btn" class="btn w-full">Attaquer !</button>
+            </div>
+
+            <div class="mt-4 flex gap-4">
+                <button id="reset-btn" class="btn flex-1">Recommencer</button>
+                <button id="back-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg flex-1">
+                    Changer d'aventure
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="message-box" class="fixed bottom-4 left-1/2 -translate-x-1/2 p-4 rounded-lg shadow-xl hidden transition-opacity duration-300 opacity-0 text-white">
+    </div>
+
+    <script src="game-engine.js"></script>
+    <script>
+        const adventureSelect = document.getElementById('adventure-select');
+        const loadAdventureBtn = document.getElementById('load-adventure-btn');
+        const customJsonInput = document.getElementById('custom-json');
+        const adventureSelector = document.getElementById('adventure-selector');
+        const gameContainer = document.getElementById('game-container');
+        const resetBtn = document.getElementById('reset-btn');
+        const backBtn = document.getElementById('back-btn');
+
+        // Liste des aventures disponibles
+        const adventures = [
+            { id: 'elian', name: 'L\'Aventure d\'Elian (Complète)', file: 'data.json' },
+            { id: 'simple', name: 'La Quête du Codex (Exemple Simple)', file: 'exemple-simple.json' }
+        ];
+
+        // Charger la liste des aventures
+        adventures.forEach(adv => {
+            const option = document.createElement('option');
+            option.value = adv.file;
+            option.textContent = adv.name;
+            adventureSelect.appendChild(option);
+        });
+
+        adventureSelect.addEventListener('change', () => {
+            loadAdventureBtn.disabled = !adventureSelect.value;
+        });
+
+        loadAdventureBtn.addEventListener('click', async () => {
+            const file = adventureSelect.value;
+            if (file) {
+                try {
+                    const response = await fetch(file);
+                    const data = await response.json();
+                    startGame(data);
+                } catch (error) {
+                    alert('Erreur lors du chargement de l\'aventure: ' + error.message);
+                }
+            }
+        });
+
+        customJsonInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        startGame(data);
+                    } catch (error) {
+                        alert('Fichier JSON invalide: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function startGame(adventureData) {
+            adventureSelector.classList.add('hidden');
+            gameContainer.classList.remove('hidden');
+            initGame(adventureData);
+        }
+
+        resetBtn.addEventListener('click', () => {
+            if (confirm('Recommencer l\'aventure depuis le début ?')) {
+                resetGame();
+            }
+        });
+
+        backBtn.addEventListener('click', () => {
+            if (confirm('Revenir à la sélection d\'aventure ? (Progression non sauvegardée)')) {
+                gameContainer.classList.add('hidden');
+                adventureSelector.classList.remove('hidden');
+                adventureSelect.value = '';
+                loadAdventureBtn.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>

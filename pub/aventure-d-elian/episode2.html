@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Aventure d'Elian</title>
+    <!-- Utilisation du CDN de Tailwind pour un style rapide et moderne -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #E0E0E0;
+            overflow-y: auto;
+        }
+        .story-container {
+            min-height: 50vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .gradient-bg {
+            background-image: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%);
+        }
+        .btn {
+            @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105;
+        }
+        .stat-bar {
+            @apply bg-gray-700 rounded-full h-2.5;
+        }
+        .stat-fill {
+            height: 100%;
+            background-image: linear-gradient(to right, #4ade80, #34d399);
+            transition: width 0.5s ease-in-out;
+            @apply rounded-full;
+        }
+        .dice-roll {
+            @apply bg-yellow-500 text-gray-900 font-bold px-3 py-1 rounded-full text-sm shadow-md;
+        }
+        /* Style pour les boutons désactivés */
+        .btn:disabled {
+            @apply bg-gray-500 cursor-not-allowed opacity-50;
+        }
+        .hp-bar-container {
+            @apply w-full bg-gray-700 rounded-full h-4;
+        }
+        .hp-bar-fill {
+            @apply h-full rounded-full transition-all duration-500 ease-in-out;
+            background-image: linear-gradient(to right, #ef4444, #f97316);
+        }
+        .hp-text {
+            @apply text-xs font-bold text-white relative top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center p-4 sm:p-8">
+    <!-- Conteneur principal du jeu -->
+    <div class="w-full max-w-4xl gradient-bg rounded-2xl shadow-2xl p-6 sm:p-10 mb-8">
+        <!-- En-tête avec les stats du personnage -->
+        <header class="mb-8 p-4 bg-gray-800 rounded-xl shadow-inner">
+            <h1 class="text-3xl font-bold text-center mb-4 text-white">L'Aventure d'Elian</h1>
+            <div id="character-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm sm:text-base">
+                <!-- Les stats seront injectées ici par JavaScript -->
+            </div>
+            <!-- Barre de vie du joueur, cachée par défaut -->
+            <div id="player-hp-display" class="mt-4 hidden">
+                <p class="font-semibold text-red-400">Votre Vie</p>
+                <div class="hp-bar-container">
+                    <div id="player-hp-bar" class="hp-bar-fill" style="width: 100%;"></div>
+                    <span id="player-hp-text" class="hp-text">18 / 18</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Conteneur de l'histoire et des choix -->
+        <div id="story-container" class="story-container">
+            <div id="story-text" class="text-lg leading-relaxed mb-8 p-4 bg-gray-800 rounded-xl shadow-inner">
+                <!-- Le texte de l'histoire sera injecté ici -->
+            </div>
+            <div id="choices-container" class="flex flex-col space-y-4">
+                <!-- Les boutons de choix seront injectés ici -->
+            </div>
+        </div>
+
+        <!-- Section pour les énigmes et les inputs -->
+        <div id="riddle-section" class="hidden mt-8 p-4 bg-gray-800 rounded-xl shadow-inner">
+            <p id="riddle-text" class="text-lg leading-relaxed mb-4"></p>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="text" id="riddle-input" placeholder="Votre réponse..." class="flex-grow p-3 rounded-lg text-gray-900 bg-gray-100 border border-gray-300">
+                <button id="riddle-submit-btn" class="btn">Soumettre</button>
+            </div>
+        </div>
+        
+        <!-- Nouvelle section pour les combats -->
+        <div id="combat-section" class="hidden mt-8 p-4 bg-gray-800 rounded-xl shadow-inner">
+            <h3 id="combat-title" class="text-xl font-bold text-center mb-4">Combat</h3>
+            <div id="combat-info" class="flex flex-col sm:flex-row justify-around items-center mb-6">
+                <!-- Stats et HP de l'ennemi -->
+                <div class="flex flex-col items-center">
+                    <p id="enemy-name" class="font-semibold text-red-400 mb-2"></p>
+                    <div class="hp-bar-container w-48">
+                        <div id="enemy-hp-bar" class="hp-bar-fill" style="width: 100%;"></div>
+                        <span id="enemy-hp-text" class="hp-text"></span>
+                    </div>
+                </div>
+            </div>
+            <!-- Log de combat -->
+            <div id="combat-log" class="bg-gray-700 p-4 rounded-lg h-32 overflow-y-auto mb-4 text-sm">
+                <!-- Les logs seront ajoutés ici -->
+            </div>
+            <div id="combat-actions" class="text-center">
+                <button id="combat-action-btn" class="btn">Attaquer !</button>
+            </div>
+        </div>
+
+        <!-- Section pour les messages d'état (succès/échec) -->
+        <div id="message-box" class="fixed bottom-4 left-1/2 -translate-x-1/2 p-4 bg-green-500 text-white rounded-lg shadow-xl hidden transition-opacity duration-300 opacity-0">
+            <!-- Les messages du jeu seront affichés ici -->
+        </div>
+    </div>
+
+    <script>
+        // Déclaration de la variable qui contiendra les données du jeu
+        let gameData = {};
+
+        // État initial du jeu
+        const initialState = {
+            currentScene: "start",
+            skills: {
+                magie: 2,
+                astuce: 1,
+                combat: 1,
+                foi: 1,
+            },
+            playerHP: 18,
+            playerMaxHP: 18,
+            inventory: [],
+        };
+
+        // État du jeu (chargé depuis les cookies)
+        let gameState = { ...initialState };
+        let currentCombat = null; // Pour gérer l'état du combat en cours
+
+        const storyTextElement = document.getElementById("story-text");
+        const choicesContainer = document.getElementById("choices-container");
+        const statsContainer = document.getElementById("character-stats");
+        const riddleSection = document.getElementById("riddle-section");
+        const riddleTextElement = document.getElementById("riddle-text");
+        const riddleInput = document.getElementById("riddle-input");
+        const riddleSubmitBtn = document.getElementById("riddle-submit-btn");
+        const messageBox = document.getElementById("message-box");
+        const playerHPDisplay = document.getElementById("player-hp-display");
+        const playerHPBar = document.getElementById("player-hp-bar");
+        const playerHPText = document.getElementById("player-hp-text");
+        const combatSection = document.getElementById("combat-section");
+        const combatTitle = document.getElementById("combat-title");
+        const enemyName = document.getElementById("enemy-name");
+        const enemyHPBar = document.getElementById("enemy-hp-bar");
+        const enemyHPText = document.getElementById("enemy-hp-text");
+        const combatLog = document.getElementById("combat-log");
+        const combatActionBtn = document.getElementById("combat-action-btn");
+
+
+        // Fonction pour sauvegarder l'état du jeu dans un cookie
+        function saveGameState() {
+            const encodedState = btoa(JSON.stringify(gameState));
+            document.cookie = `elianGameState=${encodedState}; path=/; max-age=31536000`;
+        }
+
+        // Fonction pour charger l'état du jeu depuis un cookie
+        function loadGameState() {
+            const cookieName = "elianGameState=";
+            const cookies = document.cookie.split(';');
+            for(let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i];
+                while (cookie.charAt(0) === ' ') cookie = cookie.substring(1);
+                if (cookie.indexOf(cookieName) === 0) {
+                    try {
+                        const encodedState = cookie.substring(cookieName.length, cookie.length);
+                        gameState = JSON.parse(atob(encodedState));
+                    } catch (e) {
+                        console.error("Erreur de chargement du cookie, réinitialisation de l'état du jeu.");
+                        gameState = { ...initialState };
+                    }
+                }
+            }
+        }
+
+        // Données du jeu intégrées directement
+        function loadGameData() {
+            gameData = {
+    "start": {
+        "text": "Bienvenue, jeune apprenti ! Dans cette aventure dont vous êtes le héros, vous incarnez **Elian**, un magicien prometteur, mais un peu trop audacieux. Vos choix détermineront votre destin.\n\nVous êtes **Elian**, apprenti magicien à l'illustre Académie d'Arcanum. Enfin, 'illustre' est un bien grand mot pour vous en ce moment. La vérité, c'est que vous avez un peu, disons, *arrangé* votre dossier et vos notes du dernier examen pour vous retrouver dans la classe avancée de Maître Valérius. La raison ? Simple : **Lyra**. Ses boucles rousses, son rire cristallin, et surtout, son intelligence vive qui vous a fait chavirer. Être dans sa classe était la seule solution pour avoir une chance de l'approcher.\n\nMais aujourd'hui, cette décision vous revient en pleine figure comme un sortilège mal lancé. Maître Valérius, dont le regard perçant semble lire dans les âmes, vous a convoqué après le cours. Il vous fixe, un sourire mince étirant ses lèvres fines.\n\n\"Elian,\" commence-t-il, sa voix grave résonnant dans le silence du bureau. \"Votre dossier indique une progression fulgurante. Impressionnant. Si impressionnant, en fait, que j'ai décidé de vous confier une tâche... à la hauteur de vos nouvelles capacités.\"\n\nVotre cœur fait un bond. Vous savez que Lyra est restée un instant à l'entrée, curieuse de ce que le Maître vous voulait. Vous ne pouvez pas reculer. Pas maintenant.\n\n\"La tâche est simple en théorie,\" poursuit Valérius en vous tendant une vieille carte jaunie. \"Récupérer le **Cœur de Sanguine**. Un ingrédient rare, essentiel pour ma prochaine recherche. Il se trouve dans les **Ruines de l'Ancien Laboratoire Alchimique**, juste à l'orée des faubourgs. Un lieu... instable. Mais avec votre talent, cela ne devrait être qu'une formalité.\"\n\nLe Cœur de Sanguine ! Vous avez lu des légendes à son sujet. Un ingrédient qui ne pousse que dans les environnements les plus dangereux, souvent gardé par des sorts ou des créatures. Et les Ruines de l'Ancien Laboratoire Alchimique... c'est un endroit réputé pour ses pièges et ses effondrements. C'est une mission suicidaire pour un apprenti de votre niveau.\n\nSi vous refusez, Valérius verra clair dans votre jeu. Adieu la classe avancée, adieu Lyra, adieu l'Académie. Mais si vous y allez sans préparation, c'est la mort assurée.\n\nVous quittez le bureau, la carte froissée dans votre main moite. La nuit tombe sur la ville. Vous devez trouver une solution, et vite.\n\n---\n\n### Vos Compétences\n\nElian possède des scores dans quatre domaines, représentant le nombre de dés à lancer pour une action :\n\n* **Magie :** 2 dés (compétences arcaniques)\n\n* **Astuce :** 1 dé (compétences de roublardise, discrétion)\n\n* **Combat :** 1 dé (compétences de guerrier, force)\n\n* **Foi :** 1 dé (magie divine, persuasion, sagesse)\n\nChaque fois que vous devrez réaliser une action, vous lancerez **1 dé pour l'action elle-même, plus le nombre de dés de la compétence concernée**. Par exemple, un jet de Magie sera de 1 + 2 = 3 dés. Un jet d'Astuce sera de 1 + 1 = 2 dés.\n\n---\n\n### Le Chaudron Fumant : Un Avantage pour la Nuit\n\nC'est au 'Chaudron Fumant', la taverne la plus prisée des étudiants en magie, que vous l'avez vue pour la première fois. Lyra, rayonnante, annonçant fièrement à ses amis son acceptation dans la classe avancée du remarquable Maître Valérius. Votre cœur a fait un bond. C'est à ce moment-là que vous avez décidé : vous seriez dans cette classe, quoi qu'il en coûte.\n\nAujourd'hui, alors que la nuit tombe sur la ville, vous repensez à cette soirée. Vous êtes de retour au 'Chaudron Fumant', cherchant un peu de réconfort avant d'affronter le défi de Valérius. L'ambiance est bruyante et animée. Des étudiants discutent de sorts, des alchimistes échangent des recettes, et l'odeur du ragoût et de la bière de racine emplit l'air. C'est l'occasion de glaner un petit avantage pour la nuit qui s'annonce.\n\nVous avez quelques options pour tenter de vous préparer :",
+        "choices": [
+            { "text": "Approcher le Vieux Théo, l'érudit solitaire.", "next": "1.1" },
+            { "text": "Observer les marchands ambulants.", "next": "1.2" }
+        ]
+    },
+    "1.1": {
+        "text": "Vous vous dirigez vers le fond du 'Chaudron Fumant', où le **Vieux Théo** est, comme à son habitude, penché sur une pile de parchemins jaunis, une tasse de thé fumante à ses côtés. Son nez est plongé dans un texte si ancien qu'il semble prêt à se désintégrer. Il est connu pour son savoir encyclopédique, mais aussi pour son caractère un peu bourru.\n\nVous vous raclez la gorge. 'Bonsoir, Maître Théo,' commencez-vous, essayant de paraître respectueux sans être trop intrusif. 'Je... je me demandais si vous aviez quelques instants. Je suis un apprenti, et je suis confronté à un problème qui dépasse mes connaissances actuelles.'\n\nLe Vieux Théo lève lentement la tête, ses yeux plissés par l'âge et la lecture vous fixant par-dessus des lunettes perchées sur le bout de son nez. Il ne dit rien, attendant. Vous sentez que c'est le moment de choisir comment vous allez le convaincre de vous aider.",
+        "choices": [
+            { "text": "Tenter de gagner sa confiance avec votre Astuce (2 dés). Difficulté : 8+", "skill": "astuce", "difficulty": 8, "success": "1.1.1", "failure": "1.1.2" },
+            { "text": "Faire appel à sa Foi/Sagesse (2 dés). Difficulté : 8+", "skill": "foi", "difficulty": 8, "success": "1.1.1", "failure": "1.1.2" }
+        ]
+    },
+    "1.1.1": {
+        "text": "Votre flatterie subtile ou votre appel à sa sagesse a fait mouche auprès du **Vieux Théo**. Un léger sourire étire ses lèvres fines tandis qu'il vous regarde par-dessus ses lunettes. \"Ah, un jeune esprit qui apprécie la valeur des chemins détournés,\" marmonne-t-il. \"Très bien. Je vais vous donner un conseil, jeune homme. Les secrets les mieux gardés ne sont jamais là où on les attend. Et parfois, la **Foi** peut ouvrir des portes que la magie et la ruse ne peuvent forcer.\"\n\nIl tapote un vieux parchemin du doigt. \"Il y a une ancienne prière, oubliée de la plupart, qui peut apaiser les esprits gardiens. Elle est particulièrement efficace contre les créatures élémentaires. Si jamais vous rencontrez un tel gardien, cette prière pourrait vous donner un avantage décisif.\"\n\nVous obtenez la **Prière d'Apaisement** (usage unique). Cet avantage vous permettra de relancer un jet de **Foi** raté une seule fois, ou d'ajouter +3 à un jet de **Foi** lorsque vous ferez face à un gardien ou une créature élémentaire.",
+        "choices": [
+            { "text": "Continuer l'aventure.", "next": "2.0", "gain": { "inventory": ["Prière d'Apaisement"] } }
+        ]
+    },
+    "1.1.2": {
+        "text": "Le Vieux Théo vous écoute, puis secoue la tête lentement. \"Les secrets ne se donnent pas si facilement, jeune homme. Et la sagesse ne s'acquiert pas par de vaines paroles. Votre problème est le vôtre. Cherchez vos propres solutions.\" Il replonge le nez dans ses parchemins, vous ignorant. Vous n'avez rien obtenu de lui.",
+        "choices": [
+            { "text": "Continuer l'aventure.", "next": "2.0" }
+        ]
+    },
+    "1.2": {
+        "text": "Vous vous dirigez vers le coin animé de la taverne où les marchands ambulants étalent leurs marchandises. Des amulettes scintillantes, des fioles aux liquides étranges, des poudres aux couleurs vives... C'est un mélange de trésors potentiels et de pacotille. Vous devez être vigilant pour ne pas vous faire arnaquer.",
+        "choices": [
+            { "text": "Utiliser votre Astuce pour repérer une bonne affaire (2 dés). Difficulté : 8+", "skill": "astuce", "difficulty": 8, "success": "1.2.1", "failure": "1.2.2" },
+            { "text": "Utiliser votre Magie pour identifier une potion utile (3 dés). Difficulté : 10+", "skill": "magie", "difficulty": 10, "success": "1.2.1", "failure": "1.2.2" }
+        ]
+    },
+    "1.2.1": {
+        "text": "Votre perspicacité ou votre sens magique vous guide vers un petit flacon discret, presque caché sous une pile de colliers sans valeur. L'aura qui s'en dégage est faible, mais pure. Vous l'achetez pour quelques pièces. Il s'agit d'une **Potion de Discrétion** (usage unique). Cette potion vous permettra d'ajouter +3 à un jet d'**Astuce** lié à la discrétion ou à l'infiltration.",
+        "choices": [
+            { "text": "Continuer l'aventure.", "next": "2.0", "gain": { "inventory": ["Potion de Discrétion"] } }
+        ]
+    },
+    "1.2.2": {
+        "text": "Malgré vos efforts, vous ne trouvez rien de valeur. Les marchands sont trop rusés, ou les objets trop bien dissimulés. Vous repartez les mains vides, avec le sentiment d'avoir perdu votre temps.",
+        "choices": [
+            { "text": "Continuer l'aventure.", "next": "2.0" }
+        ]
+    },
+    "2.0": {
+        "text": "La nuit est tombée sur la ville. Vous avez quelques heures avant le lever du soleil et la confrontation avec Valérius. Vous avez trois pistes pour vous débrouiller :",
+        "choices": [
+            { "text": "Le Grimoire Interdit : Tenter de vous infiltrer dans la Bibliothèque Interdite.", "next": "chapitre1_start" },
+            { "text": "L'Invocation Secrète : Tenter de vous infiltrer dans la Chambre des Reliques Sacrées.", "next": "chapitre2_start" },
+            { "text": "La Potion Miraculeuse : Tenter de vous aventurer dans la Ménagerie de l'Académie.", "next": "chapitre3_start" }
+        ]
+    },
+    "chapitre1_start": {
+        "text": "La nuit est profonde. La **Bibliothèque Interdite** se dresse devant vous, une annexe isolée du bâtiment principal, ses fenêtres sombres ressemblant à des yeux vides. Des symboles étranges brillent faiblement sur la porte, signe d'une magie de protection active.",
+        "choices": [
+            { "text": "Tenter de désactiver les protections magiques (Magie 3 dés, Diff: 8+)", "skill": "magie", "difficulty": 8, "success": "1.2_bibli", "failure": "1.1.1_bibli" },
+            { "text": "Chercher une entrée discrète (Astuce 2 dés, Diff: 8+)", "skill": "astuce", "difficulty": 8, "success": "1.2_bibli", "failure": "1.1.1_bibli" }
+        ]
+    },
+    "1.1.1_bibli": {
+        "text": "Un léger sifflement aigu se fait entendre, suivi d'une faible lueur bleutée. Une petite silhouette lumineuse, comme un esprit de poussière, émerge d'une fissure et commence à tournoyer, émettant un bourdonnement de plus en plus fort. Il ne vous a pas encore vu, mais il enquête sur le bruit.",
+        "choices": [
+            { "text": "Tenter de vous dissimuler rapidement dans l'ombre (Astuce 2 dés, Diff: 8+)", "skill": "astuce", "difficulty": 8, "success": "1.2_bibli", "failure": "1.1.2_bibli" },
+            { "text": "Tenter de dissiper l'esprit avec un sort rapide et discret (Magie 3 dés, Diff: 8+)", "skill": "magie", "difficulty": 8, "success": "1.2_bibli", "failure": "1.1.2_bibli" }
+        ]
+    },
+    "1.1.2_bibli": {
+        "text": "L'esprit vous a repéré et fonce sur vous, son bourdonnement devenant strident. Il s'apprête à déclencher une alarme en bonne et due forme.",
+        "choices": [
+            { "text": "Tenter de fuir (Astuce 2 dés, Diff: 10+)", "skill": "astuce", "difficulty": 10, "success": "capture", "failure": "capture" },
+            { "text": "Tenter de détruire l'esprit (Combat 2 dés, Diff: 10+)", "skill": "combat", "difficulty": 10, "success": "capture", "failure": "capture" },
+            { "text": "Tenter de paralyser l'esprit (Magie 3 dés, Diff: 10+)", "skill": "magie", "difficulty": 10, "success": "1.2_bibli", "failure": "capture" }
+        ]
+    },
+    "1.2_bibli": {
+        "text": "Vous êtes à l'intérieur. La pièce est immense, un labyrinthe de savoir interdit. Des étagères massives, remplies de tomes anciens, s'élèvent jusqu'au plafond. Vous devez trouver le grimoire de **Télékinésie Avancée**.",
+        "choices": [
+            { "text": "Résoudre l'Énigme du Bibliothécaire.", "enigma": { "question": "Je suis le gardien des secrets silencieux, brisé par le moindre murmure. Je n'ai pas de voix, mais je suis essentiel au savoir. Qui suis-je ?", "answer": "SILENCE", "value": 67 }, "success": "1.3_bibli", "failure": "1.2.1_bibli" },
+            { "text": "Utiliser votre Magie pour le localiser (Magie 3 dés, Diff: 12+)", "skill": "magie", "difficulty": 12, "success": "1.3_bibli", "failure": "1.2.1_bibli" }
+        ]
+    },
+    "1.2.1_bibli": {
+        "text": "Un *clic-clac* régulier se rapproche. Une forme massive et anguleuse émerge de l'ombre : un **golem de pierre**. Il vous a détecté et s'apprête à alerter toute l'Académie.",
+        "choices": [
+            { "text": "Tenter de fuir (Astuce 2 dés, Diff: 10+)", "skill": "astuce", "difficulty": 10, "success": "1.2_bibli", "failure": "capture" },
+            { "text": "Tenter de paralyser le golem (Magie 3 dés, Diff: 12+)", "skill": "magie", "difficulty": 12, "success": "1.3_bibli", "failure": "capture" },
+            { "text": "Tenter une diversion sonore (Magie 3 dés, Diff: 12+ ou Astuce 2 dés, Diff: 10+)", "skill": ["magie", "astuce"], "difficulty": [12, 10], "success": "1.2_bibli", "failure": "capture" }
+        ]
+    },
+    "1.3_bibli": {
+        "text": "Vous avez réussi ! Que ce soit par l'énigme résolue, votre magie, ou en paralysant le golem, vous avez mis la main sur le **Grimoire de Télékinésie Avancée**. Ses pages sont lourdes de sorts complexes, et vous savez qu'avec ce savoir, le Cœur de Sanguine sera à votre portée.\n\nFélicitations ! Vous avez réussi la première partie de votre quête.",
+        "choices": [
+            { "text": "Poursuivre la quête du Cœur de Sanguine.", "next": "quete_finale_bibli_next" }
+        ]
+    },
+    "chapitre2_start": {
+        "text": "La **Chambre des Reliques Sacrées** est un lieu de paix et de recueillement, mais aussi de secrets bien gardés. Vous avez besoin d'un fragment de pierre magique pour invoquer un golem.",
+        "choices": [
+            { "text": "Tenter de convaincre le Gardien du Temple (Foi 2 dés, Diff: 8+)", "skill": "foi", "difficulty": 8, "success": "2.2_relique", "failure": "capture" },
+            { "text": "Tenter de vous infiltrer discrètement (Astuce 2 dés, Diff: 9+)", "skill": "astuce", "difficulty": 9, "success": "2.2_relique", "failure": "2.1.1_relique" }
+        ]
+    },
+    "2.1.1_relique": {
+        "text": "Un gardien vous a repéré, ou une protection magique s'est activée. Des pas se rapprochent.",
+        "choices": [
+            { "text": "Tenter de fuir (Astuce 2 dés, Diff: 10+)", "skill": "astuce", "difficulty": 10, "success": "chapitre2_start", "failure": "capture" },
+            { "text": "Tenter de désactiver les protections (Magie 3 dés, Diff: 12+)", "skill": "magie", "difficulty": 12, "success": "2.2_relique", "failure": "capture" }
+        ]
+    },
+    "2.2_relique": {
+        "text": "À l'intérieur, des reliques anciennes brillent faiblement. Le fragment de pierre magique est posé sur un autel, entouré d'une aura de protection.",
+        "choices": [
+            { "text": "Résoudre l'Énigme du Culte.", "enigma": { "question": "Je suis la force invisible qui élève les prières, le pilier de l'âme dans les cieux. Sans moi, le temple est vide, avec moi, l'espoir demeure. Qui suis-je ?", "answer": "FOI", "value": 30 }, "success": "2.3_relique", "failure": "2.2.1_relique" },
+            { "text": "Tenter de le voler discrètement (Astuce 2 dés, Diff: 10+)", "skill": "astuce", "difficulty": 10, "success": "2.3_relique", "failure": "2.2.1_relique" }
+        ]
+    },
+    "2.2.1_relique": {
+        "text": "Un piège se déclenche ou une protection magique se referme sur vous.",
+        "choices": [
+            { "text": "Tenter de désactiver le piège/la protection (Magie 3 dés, Diff: 12+ OU Astuce 2 dés, Diff: 10+)", "skill": ["magie", "astuce"], "difficulty": [12, 10], "success": "2.3_relique", "failure": "capture" },
+            { "text": "Tenter de s'échapper (Combat 2 dés, Diff: 10+)", "skill": "combat", "difficulty": 10, "success": "chapitre2_start", "failure": "capture" }
+        ]
+    },
+    "2.3_relique": {
+        "text": "Vous avez réussi ! Le fragment de pierre magique est entre vos mains. Vous savez qu'avec cet objet, vous pourrez invoquer un golem pour récupérer le Cœur de Sanguine.\n\nFélicitations ! Vous avez réussi la première partie de votre quête.",
+        "choices": [
+            { "text": "Poursuivre la quête du Cœur de Sanguine.", "next": "quete_finale_relique_next" }
+        ]
+    },
+    "chapitre3_start": {
+        "text": "La **Ménagerie de l'Académie** est un lieu bruyant et exotique, abritant des créatures magiques dangereuses. Vous avez besoin d'un ingrédient clé pour une potion de Force Surhumaine.",
+        "choices": [
+            { "text": "Tenter de distraire les gardiens/soigneurs (Astuce 2 dés, Diff: 8+)", "skill": "astuce", "difficulty": 8, "success": "3.2_menag", "failure": "3.1.1_menag" },
+            { "text": "Tenter de vous faufiler magiquement (Magie 3 dés, Diff: 10+)", "skill": "magie", "difficulty": 10, "success": "3.2_menag", "failure": "3.1.1_menag" }
+        ]
+    },
+    "3.1.1_menag": {
+        "text": "Un gardien vous a repéré, ou une créature a fait du bruit. Des pas se rapprochent.",
+        "choices": [
+            { "text": "Tenter de fuir (Astuce 2 dés, Diff: 10+)", "skill": "astuce", "difficulty": 10, "success": "chapitre3_start", "failure": "capture" },
+            { "text": "Tenter de combattre les gardiens (Combat 2 dés, Diff: 10+)", "skill": "combat", "difficulty": 10, "success": "3.2_menag", "failure": "capture" }
+        ]
+    },
+    "3.2_menag": {
+        "text": "Vous êtes à l'intérieur de la ménagerie. L'ingrédient que vous cherchez est gardé par une créature féroce (par exemple, un **Griffon Mineur**).",
+        "choices": [
+            { "text": "Affronter la créature gardienne (Combat 2 dés, Diff: 12+)", "skill": "combat", "difficulty": 12, "success": "3.3_menag", "failure": "capture" },
+            { "text": "Tenter d'apaiser la créature (Foi 2 dés, Diff: 10+)", "skill": "foi", "difficulty": 10, "success": "3.3_menag", "failure": "3.2.1_menag" },
+            { "text": "Résoudre l'Énigme du Gardien de la Ménagerie.", "enigma": { "question": "Je suis le mystère qui anime la bête, le premier souffle et le dernier battement. Sans moi, la créature n'est que matière, avec moi, elle règne. Que suis-je ?", "answer": "VIE", "value": 36 }, "success": "3.3_menag", "failure": "3.2.1_menag" }
+        ]
+    },
+    "3.2.1_menag": {
+        "text": "La créature vous attaque !",
+        "choices": [
+            { "text": "Tenter de fuir (Astuce 2 dés, Diff: 10+)", "skill": "astuce", "difficulty": 10, "success": "chapitre3_start", "failure": "capture" },
+            { "text": "Tenter de combattre la créature (Combat 2 dés, Diff: 12+)", "skill": "combat", "difficulty": 12, "success": "3.3_menag", "failure": "capture" }
+        ]
+    },
+    "3.3_menag": {
+        "text": "Vous avez réussi ! L'ingrédient clé est entre vos mains. Vous savez qu'avec cet ingrédient, vous pourrez concocter la potion de Force Surhumaine nécessaire pour les Ruines.\n\nFélicitations ! Vous avez réussi la première partie de votre quête.",
+        "choices": [
+            { "text": "Poursuivre la quête du Cœur de Sanguine.", "next": "quete_finale_potion_next" }
+        ]
+    },
+    "capture": {
+        "text": "Vous êtes maîtrisé, vos mains liées par une corde enchantée. L'alarme retentit, et Maître Valérius apparaît, son visage déformé par la colère.\n\n\"Elian,\" dit-il, sa voix grave et dangereuse, \"Qu'est-ce que cela signifie ? Que faites-vous ici, et pourquoi avez-vous déclenché l'alarme ?\"\n\nSon regard est perçant, et vous savez qu'il a déjà une idée. La vérité sur votre dossier falsifié et votre tricherie est sur le point d'éclater. Lyra, si elle l'apprend, vous considérera comme un imposteur.",
+        "choices": [
+            { "text": "Avouer la vérité.", "next": "fin_echec" },
+            { "text": "Tenter de mentir/bluffer (prétendre une détection magique) (Magie 3 dés, Diff: 12+)", "skill": "magie", "difficulty": 12, "success": "capture.1", "failure": "fin_echec" }
+        ]
+    },
+    "capture.1": {
+        "text": "Une légère brise magique, subtile et imperceptible pour la plupart, frôle le visage de Maître Valérius. Une odeur d'ozone, presque imperceptible, flotte un instant dans l'air. Votre expression est un mélange parfait d'inquiétude et de détermination. Valérius est intrigué.\n\n\"Une anomalie, dites-vous ?\" murmure-t-il. \"Intéressant. Décrivez-moi précisément ce que vous avez ressenti.\"",
+        "choices": [
+            { "text": "Guider Valérius vers l'emplacement de l'objet (Astuce 2 dés, Diff: 10+)", "skill": "astuce", "difficulty": 10, "success": "quete_finale_bibli_next", "failure": "fin_echec" },
+            { "text": "Proposer votre aide pour localiser l'anomalie (Magie 3 dés, Diff: 12+)", "skill": "magie", "difficulty": 12, "success": "quete_finale_bibli_next", "failure": "fin_echec" }
+        ]
+    },
+    "quete_finale_bibli_next": {
+        "text": "Vous avez mis la main sur le **Grimoire de Télékinésie Avancée** ! Ce savoir est précieux. Fort de votre succès, vous vous dirigez vers l'orée des faubourgs. Le soleil se lève à peine, projetant de longues ombres sur les chemins pavés. C'est le moment de vous aventurer dans les **Ruines de l'Ancien Laboratoire Alchimique**, un lieu réputé pour ses pièges et ses créatures.\n\nVous arrivez devant l'entrée d'un tunnel effondré. Une faible lueur verdâtre émane de l'intérieur, accompagnée d'un cliquetis régulier, comme une mécanique ancienne qui peine à fonctionner. En vous approchant, vous distinguez un petit être anguleux, fait de débris et d'une sorte de pâte alchimique. C'est un **Homuncule Alchimique** qui garde le passage. Ses deux bras sont des pinces de métal rouillé, et ses yeux brillent d'une lumière sinistre.\n\nPour passer, vous devrez l'affronter. Vous disposez de la **Télékinésie Avancée**, qui vous permet d'utiliser votre Magie pour frapper à distance ou manipuler l'environnement. C'est votre principal avantage contre cette créature.",
+        "choices": [
+            { "text": "Engager le combat avec l'Homuncule.", "combat": { "success": "combat_homoncule_success", "failure": "combat_homoncule_failure", "playerBonusDice": 2, "enemy": { "name": "Homuncule Alchimique", "hp": 6, "skill": "combat", "dice": 1 } } },
+            { "text": "Tenter de le désactiver avec votre magie (jet opposé de Magie).", "opposedRoll": { "next": "opposed_homoncule_magie_success", "skill": "magie", "enemySkill": "magie", "enemyDice": 1, "success": "opposed_homoncule_magie_success", "failure": "opposed_homoncule_magie_fail" } }
+        ]
+    },
+    "opposed_homoncule_magie_success": {
+        "text": "Votre concentration est parfaite ! L'Homuncule émet un grincement strident alors que ses joints se figent sous l'effet de votre sort de stase. Vous avez réussi à le neutraliser sans combat. Le passage est libre.\n\nVous pénétrez dans les ruines, la carte de Valérius en main, prêt pour la suite.",
+        "choices": [
+            { "text": "Continuer votre exploration des ruines.", "next": "ruins_exploration_continue" }
+        ]
+    },
+    "opposed_homoncule_magie_fail": {
+        "text": "Votre sort de stase est trop faible ! L'Homuncule fait un grand pas en avant, ses yeux brillent d'une lueur malveillante. Le combat est inévitable.",
+        "choices": [
+            { "text": "Engager le combat avec l'Homuncule.", "combat": { "success": "combat_homoncule_success", "failure": "combat_homoncule_failure", "enemy": { "name": "Homuncule Alchimique", "hp": 6, "skill": "combat", "dice": 1 } } }
+        ]
+    },
+    "opposed_homoncule_foi_success": {
+        "text": "Le fragment de pierre se met à vibrer dans votre main. Un esprit de pierre se matérialise et détourne l'attention de l'Homuncule. Le passage est libre.\n\nVous pénétrez dans les ruines, la carte de Valérius en main, prêt pour la suite.",
+        "choices": [
+            { "text": "Continuer votre exploration des ruines.", "next": "ruins_exploration_continue" }
+        ]
+    },
+    "opposed_homoncule_foi_fail": {
+        "text": "Le fragment de pierre se met à vibrer, mais aucune invocation ne se produit. L'Homuncule fait un grand pas en avant, ses yeux brillent d'une lueur malveillante. Le combat est inévitable.",
+        "choices": [
+            { "text": "Engager le combat avec l'Homuncule.", "combat": { "success": "combat_homoncule_success", "failure": "combat_homoncule_failure", "enemy": { "name": "Homuncule Alchimique", "hp": 6, "skill": "combat", "dice": 1 } } }
+        ]
+    },
+    "opposed_homoncule_astuce_success": {
+        "text": "Avec la potion, vous vous fondez dans les ombres, détournant l'attention de la créature qui scrute les environs. Le passage est libre.\n\nVous pénétrez dans les ruines, la carte de Valérius en main, prêt pour la suite.",
+        "choices": [
+            { "text": "Continuer votre exploration des ruines.", "next": "ruins_exploration_continue" }
+        ]
+    },
+    "opposed_homoncule_astuce_fail": {
+        "text": "L'Homuncule émet un grincement strident et se retourne brusquement, vous repérant ! Le combat est inévitable.",
+        "choices": [
+            { "text": "Engager le combat avec l'Homuncule.", "combat": { "success": "combat_homoncule_success", "failure": "combat_homoncule_failure", "enemy": { "name": "Homuncule Alchimique", "hp": 6, "skill": "combat", "dice": 1 } } }
+        ]
+    },
+    "quete_finale_relique_next": {
+        "text": "Vous avez mis la main sur un **Fragment de Pierre Magique** ! Fort de votre succès, vous vous dirigez vers l'orée des faubourgs. Le soleil se lève à peine, projetant de longues ombres sur les chemins pavés. C'est le moment de vous aventurer dans les **Ruines de l'Ancien Laboratoire Alchimique**, un lieu réputé pour ses pièges et ses créatures.\n\nVous arrivez devant l'entrée d'un tunnel effondré. Une faible lueur verdâtre émane de l'intérieur, accompagnée d'un cliquetis régulier, comme une mécanique ancienne qui peine à fonctionner. En vous approchant, vous distinguez un petit être anguleux, fait de débris et d'une sorte de pâte alchimique. C'est un **Homuncule Alchimique** qui garde le passage. Ses deux bras sont des pinces de métal rouillé, et ses yeux brillent d'une lumière sinistre.\n\nPour passer, vous devrez l'affronter. Vous disposez du **Fragment de Pierre Magique**, qui vous permet d'invoquer temporairement un allié pour vous aider dans le combat. C'est votre principal avantage contre cette créature.",
+        "choices": [
+            { "text": "Engager le combat avec l'Homuncule.", "combat": { "success": "combat_homoncule_success", "failure": "combat_homoncule_failure", "playerBonusDice": 2, "enemy": { "name": "Homuncule Alchimique", "hp": 6, "skill": "combat", "dice": 1 } } },
+            { "text": "Utiliser le fragment pour invoquer un esprit élémentaire qui se battra à vos côtés (jet opposé de Foi).", "opposedRoll": { "next": "opposed_homoncule_foi_success", "skill": "foi", "enemySkill": "foi", "enemyDice": 1, "success": "opposed_homoncule_foi_success", "failure": "opposed_homoncule_foi_fail" } }
+        ]
+    },
+    "quete_finale_potion_next": {
+        "text": "Vous avez mis la main sur l'ingrédient clé pour votre **Potion de Force Surhumaine** ! Fort de votre succès, vous vous dirigez vers l'orée des faubourgs. Le soleil se lève à peine, projetant de longues ombres sur les chemins pavés. C'est le moment de vous aventurer dans les **Ruines de l'Ancien Laboratoire Alchimique**, un lieu réputé pour ses pièges et ses créatures.\n\nVous arrivez devant l'entrée d'un tunnel effondré. Une faible lueur verdâtre émane de l'intérieur, accompagnée d'un cliquetis régulier, comme une mécanique ancienne qui peine à fonctionner. En vous approchant, vous distinguez un petit être anguleux, fait de débris et d'une sorte de pâte alchimique. C'est un **Homuncule Alchimique** qui garde le passage. Ses deux bras sont des pinces de métal rouillé, et ses yeux brillent d'une lumière sinistre.\n\nPour passer, vous devrez l'affronter. Vous disposez de la **Potion de Force Surhumaine**, qui vous permet de booster temporairement votre force. C'est votre principal avantage contre cette créature.",
+        "choices": [
+            { "text": "Boire la potion et engager le combat (Combat + 2 dés)", "combat": { "success": "combat_homoncule_success", "failure": "combat_homoncule_failure", "playerBonusDice": 2, "enemy": { "name": "Homuncule Alchimique", "hp": 6, "skill": "combat", "dice": 1 } } },
+            { "text": "Tenter de le dérouter et de vous faufiler derrière lui (jet opposé d'Astuce)", "opposedRoll": { "next": "opposed_homoncule_astuce_success", "skill": "astuce", "enemySkill": "astuce", "enemyDice": 1, "success": "opposed_homoncule_astuce_success", "failure": "opposed_homoncule_astuce_fail" } }
+        ]
+    },
+    "combat_homoncule_success": {
+        "text": "Vous avez vaincu l'Homuncule Alchimique ! La carcasse de la créature gît au sol, ses yeux lumineux éteints. Le passage est libre.\n\nVous pénétrez dans les ruines, la carte de Valérius en main, prêt pour la suite.",
+        "choices": [
+            { "text": "Continuer votre exploration des ruines.", "next": "ruins_exploration_continue" }
+        ]
+    },
+    "combat_homoncule_failure": {
+        "text": "L'Homuncule Alchimique a été plus fort que vous. Vous êtes blessé et ne pouvez plus continuer. Vous êtes capturé et subissez le même sort que dans le scénario de la capture. C'est la fin de votre aventure...",
+        "choices": [
+            { "text": "Fin de la partie.", "next": "fin_echec" }
+        ]
+    },
+    "ruins_exploration_continue": {
+        "text": "Les ruines sont vastes et sombres. Des squelettes d'anciens alchimistes gisent ici et là, témoignage des dangers qui vous entourent. Des fioles brisées, des alambics rouillés et des parchemins moisis jonchent le sol.\n\nVous arrivez devant une porte en pierre. Des symboles alchimiques sont gravés sur sa surface. Trois symboles, l'un pour l'acide, l'autre pour le mercure et le dernier pour l'eau. Pour l'ouvrir, il faut les activer dans le bon ordre.\n\nUn sentiment d'urgence vous envahit, le temps presse, et Maître Valérius sera bientôt à vos trousses. Vous remarquez également une petite fiole sur une table à proximité, contenant une potion de **lévitation**, qui pourrait vous aider à échapper à un piège.",
+        "choices": [
+            { "text": "Tenter d'ouvrir la porte en pierre.", "next": "enigma_ruins" },
+            { "text": "Prendre la Potion de Lévitation.", "next": "enigma_ruins", "gain": { "inventory": ["Potion de Lévitation"] } }
+        ]
+    },
+    "enigma_ruins": {
+        "text": "Vous vous tenez devant la porte en pierre. Les symboles alchimiques sont là. Vous devez résoudre une énigme pour les activer dans le bon ordre.\n\n**Énigme de la porte** : \n\nLe premier est un poison qui rend la matière souple.\nLe second est un liquide qui purifie le corps.\nLe dernier est une essence qui s'élève vers le ciel, insaisissable.\n\nDans quel ordre faut-il les activer ?\n\n1. Mercure, Acide, Eau\n2. Acide, Eau, Mercure\n3. Eau, Mercure, Acide",
+        "choices": [
+            { "text": "Choisir : Mercure, Acide, Eau", "answer": 1, "success": "enigma_ruins_fail", "failure": "enigma_ruins_fail" },
+            { "text": "Choisir : Acide, Eau, Mercure", "answer": 2, "success": "enigma_ruins_success", "failure": "enigma_ruins_fail" },
+            { "text": "Choisir : Eau, Mercure, Acide", "answer": 3, "success": "enigma_ruins_fail", "failure": "enigma_ruins_fail" }
+        ]
+    },
+    "enigma_ruins_success": {
+        "text": "La porte s'ouvre lentement, un grincement sinistre remplissant l'air. Vous avez trouvé le bon ordre ! Vous vous tenez maintenant devant le Cœur de Sanguine, qui luit faiblement au centre de la pièce.",
+        "choices": [
+            { "text": "Prendre le Cœur de Sanguine.", "next": "fin_succes" }
+        ]
+    },
+    "enigma_ruins_fail": {
+        "text": "Les symboles se mettent à briller d'un rouge écarlate et la porte se referme brusquement ! Un gaz soporifique se dégage et vous plonge dans un sommeil profond. Quand vous vous réveillez, vous êtes dans une cellule de l'Académie. Maître Valérius vous a découvert et vous a fait capturer. C'est la fin de votre aventure...",
+        "choices": [
+            { "text": "Fin de la partie.", "next": "fin_echec" }
+        ]
+    },
+    "fin_succes": {
+        "text": "Vous avez réussi à prendre le **Cœur de Sanguine** ! Vous rentrez à l'Académie juste à temps, le cœur de la créature palpitant dans vos mains. Maître Valérius est impressionné, et Lyra vous félicite en souriant. Votre réputation est sauve, et votre avenir à l'Académie s'annonce radieux.",
+        "choices": []
+    },
+    "fin_echec": {
+        "text": "Maître Valérius vous démasque publiquement, révélant votre tricherie et votre dossier falsifié. Vous êtes expulsé de l'Académie d'Arcanum, votre réputation est ruinée, et toute chance avec Lyra s'envole. Votre aventure s'arrête ici.\n\n---Fin de la partie---",
+        "choices": []
+    }
+};
+        }
+        
+        // Fonction pour mettre à jour l'affichage des stats du personnage
+        function updateStatsDisplay() {
+            statsContainer.innerHTML = `
+                <div class="p-2 bg-gray-700 rounded-lg shadow-sm">
+                    <p class="font-semibold text-green-400">Magie</p>
+                    <p>${gameState.skills.magie} dés</p>
+                </div>
+                <div class="p-2 bg-gray-700 rounded-lg shadow-sm">
+                    <p class="font-semibold text-green-400">Astuce</p>
+                    <p>${gameState.skills.astuce} dés</p>
+                </div>
+                <div class="p-2 bg-gray-700 rounded-lg shadow-sm">
+                    <p class="font-semibold text-green-400">Combat</p>
+                    <p>${gameState.skills.combat} dés</p>
+                </div>
+                <div class="p-2 bg-gray-700 rounded-lg shadow-sm">
+                    <p class="font-semibold text-green-400">Foi</p>
+                    <p>${gameState.skills.foi} dés</p>
+                </div>
+            `;
+            playerHPDisplay.classList.remove('hidden');
+            const hpPercentage = (gameState.playerHP / gameState.playerMaxHP) * 100;
+            playerHPBar.style.width = `${hpPercentage}%`;
+            playerHPText.textContent = `${gameState.playerHP} / ${gameState.playerMaxHP}`;
+
+            if (gameState.inventory && gameState.inventory.length > 0) {
+                statsContainer.innerHTML += `
+                    <div class="col-span-2 sm:col-span-4 p-2 bg-gray-700 rounded-lg shadow-sm">
+                        <p class="font-semibold text-green-400">Inventaire</p>
+                        <p>${gameState.inventory.join(', ')}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Fonction pour afficher un message temporaire (succès/échec)
+        function showMessage(text, isSuccess) {
+            messageBox.textContent = text;
+            messageBox.classList.remove('hidden', 'bg-green-500', 'bg-red-500');
+            messageBox.classList.add(isSuccess ? 'bg-green-500' : 'bg-red-500', 'opacity-100');
+            
+            setTimeout(() => {
+                messageBox.classList.remove('opacity-100');
+                messageBox.classList.add('opacity-0');
+                setTimeout(() => messageBox.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        // Fonction pour lancer les dés
+        function rollDice(numDice) {
+            let total = 0;
+            let rolls = [];
+            for (let i = 0; i < numDice; i++) {
+                const roll = Math.floor(Math.random() * 6) + 1;
+                rolls.push(roll);
+                total += roll;
+            }
+            return { total, rolls };
+        }
+
+        // Fonction pour calculer la valeur numérique d'un mot
+        function calculateWordValue(word) {
+            let sum = 0;
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const upperCaseWord = word.toUpperCase();
+            for (let i = 0; i < upperCaseWord.length; i++) {
+                const letter = upperCaseWord[i];
+                const index = letters.indexOf(letter);
+                if (index !== -1) {
+                    sum += (index + 1);
+                }
+            }
+            return sum;
+        }
+
+        // Fonction pour lancer un combat
+        function startCombat(enemyData, playerBonusDice = 0) {
+            combatSection.classList.remove("hidden");
+            storyTextElement.classList.add("hidden");
+            choicesContainer.classList.add("hidden");
+
+            currentCombat = {
+                enemy: { ...enemyData, maxHP: enemyData.hp },
+                playerBonusDice: playerBonusDice,
+                nextScene: gameData[gameData[gameState.currentScene].choices.find(c => c.combat).next]
+            };
+
+            combatTitle.textContent = `Combat contre ${currentCombat.enemy.name}`;
+            enemyName.textContent = currentCombat.enemy.name;
+            updateCombatDisplay();
+
+            combatActionBtn.onclick = runCombatRound;
+            addCombatLog(`Un combat commence contre ${currentCombat.enemy.name} !`);
+            addCombatLog("Attaquez en cliquant sur le bouton ci-dessous.");
+        }
+
+        // Fonction pour afficher les infos du combat
+        function updateCombatDisplay() {
+            const playerHpPercentage = (gameState.playerHP / gameState.playerMaxHP) * 100;
+            playerHPBar.style.width = `${playerHpPercentage}%`;
+            playerHPText.textContent = `${gameState.playerHP} / ${gameState.playerMaxHP}`;
+            
+            const enemyHpPercentage = (currentCombat.enemy.hp / currentCombat.enemy.maxHP) * 100;
+            enemyHPBar.style.width = `${enemyHpPercentage}%`;
+            enemyHPText.textContent = `${currentCombat.enemy.hp} / ${currentCombat.enemy.maxHP}`;
+        }
+        
+        // Fonction pour ajouter un message au log de combat
+        function addCombatLog(message) {
+            const logEntry = document.createElement("p");
+            logEntry.textContent = message;
+            combatLog.prepend(logEntry);
+        }
+
+        // Fonction pour gérer un round de combat
+        function runCombatRound() {
+            combatActionBtn.disabled = true;
+
+            const playerDice = gameState.skills.combat + 1 + currentCombat.playerBonusDice;
+            const enemyDice = currentCombat.enemy.dice + 1;
+
+            const playerRoll = rollDice(playerDice);
+            const enemyRoll = rollDice(enemyDice);
+
+            addCombatLog(`Votre jet (${playerDice} dés) : ${playerRoll.rolls.join(' + ')} = ${playerRoll.total}`);
+            addCombatLog(`Jet de l'ennemi (${enemyDice} dés) : ${enemyRoll.rolls.join(' + ')} = ${enemyRoll.total}`);
+
+            if (playerRoll.total > enemyRoll.total) {
+                const damage = playerRoll.total - enemyRoll.total;
+                currentCombat.enemy.hp -= damage;
+                addCombatLog(`Vous infligez ${damage} dégâts à ${currentCombat.enemy.name} !`);
+            } else if (enemyRoll.total > playerRoll.total) {
+                const damage = enemyRoll.total - playerRoll.total;
+                gameState.playerHP -= damage;
+                addCombatLog(`${currentCombat.enemy.name} vous inflige ${damage} dégâts !`);
+            } else {
+                addCombatLog("Égalité ! Aucun dégât n'est infligé.");
+            }
+
+            updateCombatDisplay();
+
+            if (gameState.playerHP <= 0) {
+                addCombatLog("Vous avez été vaincu...");
+                setTimeout(() => renderScene("fin_echec"), 3000);
+            } else if (currentCombat.enemy.hp <= 0) {
+                addCombatLog(`${currentCombat.enemy.name} a été vaincu !`);
+                setTimeout(() => renderScene(currentCombat.nextScene.choices[0].next), 3000);
+            } else {
+                combatActionBtn.disabled = false;
+            }
+        }
+        
+        // Fonction pour gérer les jets opposés
+        function handleOpposedRoll(choice) {
+            const playerDice = gameState.skills[choice.skill] + 1;
+            const enemyDice = choice.enemyDice + 1;
+            
+            let playerRoll = rollDice(playerDice);
+            const enemyRoll = rollDice(enemyDice);
+            
+            let bonus = 0;
+            if (choice.skill === 'foi' && gameState.inventory.includes("Prière d'Apaisement")) {
+                bonus = 3;
+                gameState.inventory = gameState.inventory.filter(item => item !== "Prière d'Apaisement");
+                showMessage("Vous utilisez la Prière d'Apaisement ! (+3 au jet)", true);
+            } else if (choice.skill === 'astuce' && gameState.inventory.includes("Potion de Discrétion")) {
+                 bonus = 3;
+                 gameState.inventory = gameState.inventory.filter(item => item !== "Potion de Discrétion");
+                 showMessage("Vous buvez la Potion de Discrétion ! (+3 au jet)", true);
+            }
+            playerRoll.total += bonus;
+
+            const resultText = `
+                Votre jet de ${choice.skill} (${playerDice} dés) : ${playerRoll.rolls.join(' + ')} ${bonus > 0 ? `(+${bonus})` : ''} = ${playerRoll.total} <br>
+                Jet de l'opposant (${enemyDice} dés) : ${enemyRoll.rolls.join(' + ')} = ${enemyRoll.total}
+            `;
+
+            if (playerRoll.total > enemyRoll.total) {
+                showMessage(`Succès ! ${resultText}`, true);
+                setTimeout(() => renderScene(choice.success), 1500);
+            } else {
+                showMessage(`Échec... ${resultText}`, false);
+                setTimeout(() => renderScene(choice.failure), 1500);
+            }
+        }
+
+        // Fonction pour afficher une scène
+        function renderScene(sceneId) {
+            const scene = gameData[sceneId];
+            if (!scene) {
+                console.error("Scène non trouvée:", sceneId);
+                return;
+            }
+
+            gameState.currentScene = sceneId;
+            saveGameState();
+            updateStatsDisplay();
+
+            combatSection.classList.add("hidden");
+            storyTextElement.classList.remove("hidden");
+            choicesContainer.classList.remove("hidden");
+            riddleSection.classList.add("hidden");
+
+            let formattedText = scene.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formattedText = formattedText.split('\n').map(p => `<p>${p}</p>`).join('');
+            storyTextElement.innerHTML = formattedText;
+            
+            choicesContainer.innerHTML = '';
+
+            if (scene.choices.some(choice => choice.enigma)) {
+                const enigmaChoice = scene.choices.find(choice => choice.enigma);
+                riddleTextElement.innerHTML = `<strong>Énigme :</strong> ${enigmaChoice.enigma.question}`;
+                riddleSection.classList.remove("hidden");
+                choicesContainer.classList.add("hidden");
+                riddleInput.value = '';
+                riddleSubmitBtn.onclick = () => {
+                    const userAnswer = riddleInput.value;
+                    const calculatedValue = calculateWordValue(userAnswer);
+                    if (userAnswer.toUpperCase() === enigmaChoice.enigma.answer.toUpperCase() && calculatedValue === enigmaChoice.enigma.value) {
+                        showMessage(`Succès ! Votre réponse '${userAnswer}' est correcte et a une valeur de ${calculatedValue}.`, true);
+                        if (enigmaChoice.success) {
+                            setTimeout(() => renderScene(enigmaChoice.success), 1500);
+                        }
+                    } else {
+                        showMessage(`Échec. La réponse n'est pas correcte.`, false);
+                        if (enigmaChoice.failure) {
+                            setTimeout(() => renderScene(enigmaChoice.failure), 1500);
+                        }
+                    }
+                };
+            } else {
+                scene.choices.forEach(choice => {
+                    const button = document.createElement("button");
+                    button.textContent = choice.text;
+                    button.className = "btn";
+                    button.onclick = () => handleChoice(choice);
+                    choicesContainer.appendChild(button);
+                });
+            }
+        }
+        
+        function handleChoice(choice) {
+            if (choice.gain && choice.gain.inventory) {
+                gameState.inventory = [...gameState.inventory, ...choice.gain.inventory];
+            }
+
+            if (choice.combat) {
+                // Nouvelle logique de combat
+                startCombat(choice.combat.enemy, choice.combat.playerBonusDice);
+            } else if (choice.opposedRoll) {
+                // Nouvelle logique de jet opposé
+                handleOpposedRoll(choice.opposedRoll);
+            } else if (choice.skill) {
+                const skillsToCheck = Array.isArray(choice.skill) ? choice.skill : [choice.skill];
+                const difficulties = Array.isArray(choice.difficulty) ? choice.difficulty : [choice.difficulty];
+
+                let successful = false;
+                let finalRolls = [];
+
+                for (let i = 0; i < skillsToCheck.length; i++) {
+                    const skill = skillsToCheck[i];
+                    const numDice = gameState.skills[skill] + 1;
+                    const difficulty = difficulties[i];
+
+                    let advantageBonus = 0;
+                    if (skill === 'foi' && gameState.inventory.includes("Prière d'Apaisement") && (choice.text.includes("gardien") || choice.text.includes("créature élémentaire"))) {
+                        advantageBonus = 3;
+                        gameState.inventory = gameState.inventory.filter(item => item !== "Prière d'Apaisement");
+                        showMessage("Vous utilisez la Prière d'Apaisement ! (+3 au jet)", true);
+                    }
+                    if (skill === 'astuce' && gameState.inventory.includes("Potion de Discrétion") && (choice.text.includes("discrétion") || choice.text.includes("infiltration"))) {
+                         advantageBonus = 3;
+                         gameState.inventory = gameState.inventory.filter(item => item !== "Potion de Discrétion");
+                         showMessage("Vous buvez la Potion de Discrétion ! (+3 au jet)", true);
+                    }
+
+                    const { total, rolls } = rollDice(numDice);
+                    const finalTotal = total + advantageBonus;
+                    finalRolls.push(`Jet de ${skill} : ${rolls.join('+')} (+${advantageBonus}) = ${finalTotal} (Difficulté: ${difficulty})`);
+
+                    if (finalTotal >= difficulty) {
+                        successful = true;
+                        break;
+                    }
+                }
+                
+                const resultText = finalRolls.join('<br>');
+                if (successful) {
+                    showMessage(`Succès ! ${resultText}`, true);
+                    setTimeout(() => renderScene(choice.success), 1500);
+                } else {
+                    showMessage(`Échec... ${resultText}`, false);
+                    setTimeout(() => renderScene(choice.failure), 1500);
+                }
+            } else if (choice.next) {
+                renderScene(choice.next);
+            }
+        }
+        
+        // Initialisation de l'application
+        document.addEventListener("DOMContentLoaded", () => {
+            loadGameData();
+            loadGameState();
+            renderScene(gameState.currentScene);
+        });
+    </script>
+</body>
+</html>

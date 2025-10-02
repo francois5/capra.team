@@ -1,0 +1,185 @@
+{
+  "start": {
+    "text": "Vous vous réveillez dans une clairière mystérieuse. Le soleil filtre à travers les arbres, créant des motifs de lumière sur le sol moussu. Devant vous, deux chemins s'offrent à vous : l'un mène vers une **forêt sombre** au nord, l'autre vers une **rivière scintillante** à l'est.",
+    "choices": [
+      {
+        "text": "Prendre le chemin vers la forêt sombre",
+        "next": "foret"
+      },
+      {
+        "text": "Suivre le chemin vers la rivière",
+        "next": "riviere"
+      }
+    ]
+  },
+  "foret": {
+    "text": "Vous entrez dans la forêt sombre. Les arbres sont si denses que très peu de lumière parvient jusqu'au sol. Soudain, vous entendez un bruit de branches qui craquent. Un **loup géant** apparaît devant vous, les crocs découverts !",
+    "choices": [
+      {
+        "text": "Combattre le loup (Combat)",
+        "combat": {
+          "enemy": {
+            "name": "Loup Géant",
+            "hp": 8,
+            "dice": 1
+          },
+          "success": "victoire_loup",
+          "failure": "defaite"
+        }
+      },
+      {
+        "text": "Tenter de l'apaiser avec votre Foi (Difficulté: 10)",
+        "skill": "foi",
+        "difficulty": 10,
+        "success": "loup_apaise",
+        "failure": "loup_attaque"
+      },
+      {
+        "text": "S'enfuir vers la rivière",
+        "next": "riviere"
+      }
+    ]
+  },
+  "loup_attaque": {
+    "text": "Le loup ne se laisse pas apaiser ! Il bondit vers vous, et vous n'avez pas le choix : vous devez vous battre !",
+    "choices": [
+      {
+        "text": "Combattre le loup",
+        "combat": {
+          "enemy": {
+            "name": "Loup Géant",
+            "hp": 8,
+            "dice": 1
+          },
+          "success": "victoire_loup",
+          "failure": "defaite"
+        }
+      }
+    ]
+  },
+  "loup_apaise": {
+    "text": "Vos paroles apaisantes calment le loup. Il s'assoit et vous regarde avec curiosité. Après quelques instants, il se lève et vous guide vers un sentier caché qui mène à un **trésor ancien**. Vous trouvez une **épée enchantée** !\n\nVous continuez votre chemin et arrivez finalement à une **tour mystérieuse**.",
+    "choices": [
+      {
+        "text": "Entrer dans la tour",
+        "next": "victoire"
+      }
+    ]
+  },
+  "victoire_loup": {
+    "text": "Après un combat acharné, vous terrassez le loup géant ! Vous fouillez les environs et découvrez un sentier qui mène à une **tour mystérieuse** au loin.",
+    "choices": [
+      {
+        "text": "Se diriger vers la tour",
+        "next": "tour"
+      }
+    ]
+  },
+  "riviere": {
+    "text": "Vous suivez le chemin vers la rivière. L'eau claire coule paisiblement, et vous apercevez un **pont de pierre** qui traverse la rivière. De l'autre côté, vous voyez une **tour mystérieuse**. Mais alors que vous vous approchez du pont, un **troll** surgit de dessous et vous bloque le passage !\n\n'Pour traverser mon pont, résous mon énigme !' grogne-t-il.",
+    "choices": [
+      {
+        "text": "Résoudre l'énigme du troll",
+        "enigma": {
+          "question": "Je peux courir mais jamais marcher, j'ai une bouche mais ne parle pas, j'ai un lit mais ne dors jamais. Qui suis-je ?",
+          "answer": "RIVIERE",
+          "value": 94
+        },
+        "success": "enigme_reussie",
+        "failure": "enigme_ratee"
+      },
+      {
+        "text": "Combattre le troll",
+        "combat": {
+          "enemy": {
+            "name": "Troll du Pont",
+            "hp": 12,
+            "dice": 2
+          },
+          "success": "victoire_troll",
+          "failure": "defaite"
+        }
+      },
+      {
+        "text": "Utiliser la magie pour le distraire (Difficulté: 12)",
+        "skill": "magie",
+        "difficulty": 12,
+        "success": "troll_distrait",
+        "failure": "troll_fache"
+      }
+    ]
+  },
+  "enigme_reussie": {
+    "text": "Le troll sourit largement. 'Bien joué, petit malin ! Tu peux passer.' Il s'écarte et vous laisse traverser le pont. Vous vous dirigez vers la **tour mystérieuse**.",
+    "choices": [
+      {
+        "text": "Entrer dans la tour",
+        "next": "tour"
+      }
+    ]
+  },
+  "enigme_ratee": {
+    "text": "Le troll secoue la tête avec déception. 'Mauvaise réponse ! Si tu veux passer, il faudra me combattre !' Il lève son énorme massue.",
+    "choices": [
+      {
+        "text": "Combattre le troll",
+        "combat": {
+          "enemy": {
+            "name": "Troll du Pont",
+            "hp": 12,
+            "dice": 2
+          },
+          "success": "victoire_troll",
+          "failure": "defaite"
+        }
+      }
+    ]
+  },
+  "troll_distrait": {
+    "text": "Votre sort d'illusion fonctionne parfaitement ! Le troll voit soudain une montagne de pièces d'or de l'autre côté de la rivière et se précipite pour l'attraper. Vous profitez de cette distraction pour traverser rapidement le pont et vous diriger vers la **tour mystérieuse**.",
+    "choices": [
+      {
+        "text": "Entrer dans la tour",
+        "next": "tour"
+      }
+    ]
+  },
+  "troll_fache": {
+    "text": "Votre sort échoue lamentablement ! Le troll éclate de rire. 'Tu crois pouvoir me duper avec ça ? Bats-toi comme un vrai guerrier !'",
+    "choices": [
+      {
+        "text": "Combattre le troll",
+        "combat": {
+          "enemy": {
+            "name": "Troll du Pont",
+            "hp": 12,
+            "dice": 2
+          },
+          "success": "victoire_troll",
+          "failure": "defaite"
+        }
+      }
+    ]
+  },
+  "victoire_troll": {
+    "text": "Après un combat épique, vous terrassez le troll ! Il s'effondre dans la rivière avec un grand splash. Vous traversez le pont et vous dirigez vers la **tour mystérieuse**.",
+    "choices": [
+      {
+        "text": "Entrer dans la tour",
+        "next": "tour"
+      }
+    ]
+  },
+  "tour": {
+    "text": "Vous entrez dans la tour mystérieuse. À l'intérieur, vous trouvez une bibliothèque ancienne remplie de grimoires et de parchemins. Au centre de la pièce, un **livre magique** brille d'une lumière dorée. C'est le **Codex des Anciens**, l'artefact que vous cherchiez depuis le début de votre quête !\n\nVous avez réussi votre aventure ! Félicitations, héros !",
+    "choices": []
+  },
+  "defaite": {
+    "text": "Vous avez été vaincu... Votre aventure se termine ici. Mais ne vous découragez pas ! Les héros apprennent de leurs échecs. Recommencez et trouvez un autre chemin vers la victoire !",
+    "choices": []
+  },
+  "victoire": {
+    "text": "Grâce à votre sagesse et votre courage, vous avez traversé les épreuves et atteint la **tour mystérieuse**. À l'intérieur, vous découvrez le **Codex des Anciens**, l'artefact légendaire qui renferme les secrets des anciens mages.\n\nFélicitations ! Vous avez réussi votre quête !",
+    "choices": []
+  }
+}

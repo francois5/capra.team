@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prévisualisation - L'Aventure d'Elian</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #E0E0E0;
+        }
+        .gradient-bg {
+            background-image: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%);
+        }
+        .btn {
+            @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105;
+        }
+        .btn:disabled {
+            @apply bg-gray-500 cursor-not-allowed opacity-50;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center p-4 sm:p-8">
+    <div class="w-full max-w-4xl gradient-bg rounded-2xl shadow-2xl p-6 sm:p-10 mb-8">
+        <header class="mb-8 p-4 bg-gray-800 rounded-xl shadow-inner">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold text-white">Prévisualisation</h1>
+                <button onclick="window.close()" class="text-blue-400 hover:text-blue-300">✕ Fermer</button>
+            </div>
+
+            <div id="character-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm sm:text-base mb-4">
+                <div class="p-2 bg-gray-700 rounded-lg">
+                    <p class="font-semibold text-green-400">Magie</p>
+                    <p>2 dés</p>
+                </div>
+                <div class="p-2 bg-gray-700 rounded-lg">
+                    <p class="font-semibold text-green-400">Astuce</p>
+                    <p>1 dés</p>
+                </div>
+                <div class="p-2 bg-gray-700 rounded-lg">
+                    <p class="font-semibold text-green-400">Combat</p>
+                    <p>1 dés</p>
+                </div>
+                <div class="p-2 bg-gray-700 rounded-lg">
+                    <p class="font-semibold text-green-400">Foi</p>
+                    <p>1 dés</p>
+                </div>
+            </div>
+
+            <div id="player-hp-display">
+                <p class="font-semibold text-red-400 mb-2">Vie</p>
+                <div class="bg-gray-700 rounded-full h-4">
+                    <div id="player-hp-bar" class="h-full rounded-full transition-all duration-500"
+                         style="background-image: linear-gradient(to right, #ef4444, #f97316); width: 100%;">
+                    </div>
+                </div>
+                <p id="player-hp-text" class="text-sm mt-1">24 / 24</p>
+            </div>
+        </header>
+
+        <div id="game-container">
+            <div id="story-text" class="text-lg leading-relaxed mb-8 p-4 bg-gray-800 rounded-xl shadow-inner">
+                <!-- Texte de l'histoire -->
+            </div>
+
+            <div id="choices-container" class="flex flex-col space-y-4">
+                <!-- Boutons de choix -->
+            </div>
+
+            <div id="combat-section" class="hidden mt-8 p-4 bg-gray-800 rounded-xl shadow-inner">
+                <h3 id="combat-title" class="text-xl font-bold text-center mb-4">Combat</h3>
+                <div id="combat-info" class="text-center mb-4">
+                    <p id="enemy-name" class="font-semibold text-red-400 mb-2"></p>
+                    <div class="bg-gray-700 rounded-full h-4 mb-2">
+                        <div id="enemy-hp-bar" class="h-full rounded-full transition-all duration-500"
+                             style="background-image: linear-gradient(to right, #ef4444, #f97316); width: 100%;">
+                        </div>
+                    </div>
+                    <p id="enemy-hp-text" class="text-sm"></p>
+                </div>
+                <div id="combat-log" class="bg-gray-700 p-4 rounded-lg h-32 overflow-y-auto mb-4 text-sm"></div>
+                <button id="combat-action-btn" class="btn w-full">Attaquer !</button>
+            </div>
+
+            <button id="reset-btn" class="btn w-full mt-4">🔄 Recommencer</button>
+        </div>
+    </div>
+
+    <div id="message-box" class="fixed bottom-4 left-1/2 -translate-x-1/2 p-4 rounded-lg shadow-xl hidden transition-opacity duration-300 opacity-0 text-white">
+    </div>
+
+    <script src="game-engine.js"></script>
+    <script>
+        // Charger l'aventure depuis localStorage
+        const previewData = localStorage.getItem('previewAdventure');
+        if (previewData) {
+            const adventure = JSON.parse(previewData);
+            initGame(adventure);
+        } else {
+            document.getElementById('story-text').innerHTML = '<p class="text-red-400">Aucune aventure à prévisualiser.</p>';
+        }
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            resetGame();
+        });
+    </script>
+</body>
+</html>
