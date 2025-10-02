@@ -1,6 +1,6 @@
 // Variables globales
 const TEST = false
-let API_URL = 'https://capra-api.onrender.com'; // URL de base de l'API (vide = même serveur, ou mettre l'URL complète pour un autre serveur)
+let API_URL = 'https://api.neutrum.be'; // URL de base de l'API (vide = même serveur, ou mettre l'URL complète pour un autre serveur)
 if(TEST)
 	API_URL = 'http://localhost:3000';
 let bulkSendStatus = {

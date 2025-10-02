@@ -1547,16 +1547,16 @@
                     button.textContent = 'Envoi en cours...';
 
                     try {
-                        // Send via Neutrum API contact endpoint
-                        const response = await fetch('https://api.neutrum.be/send-contact-email', {
+                        // TEMPORARY: Use chat endpoint until /send-contact-email is implemented
+                        // TODO: Switch to /send-contact-email when backend is ready
+                        const response = await fetch('https://api.neutrum.be/universal-incoming-message-for-capra', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                name: name,
-                                email: email,
-                                message: message
+                                userId: 'contact-form-' + Date.now(),
+                                message: `📧 FORMULAIRE DE CONTACT\n\nNom: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
                             })
                         });
 
