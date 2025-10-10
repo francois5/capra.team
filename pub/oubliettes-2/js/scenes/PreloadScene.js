@@ -37,10 +37,10 @@ class PreloadScene extends Phaser.Scene {
 
     createIsoTiles() {
         // Cube isométrique parfait (1m³)
-        // Ratio 2:1 pour l'isométrie
+        // Pour un vrai cube, la hauteur doit être = tileWidth / 2
         const tileWidth = 64;   // Largeur du losange
-        const tileHeight = 32;  // Hauteur du losange
-        const cubeHeight = 32;  // Hauteur du cube (même que tileHeight pour un cube parfait)
+        const tileHeight = 32;  // Hauteur du losange (tileWidth / 2)
+        const cubeHeight = 64;  // Hauteur du cube = tileWidth pour un cube parfait 1m³
 
         // Sol (losange plat - vue du dessus d'un cube)
         const floorCanvas = document.createElement('canvas');
