@@ -97,11 +97,11 @@ class GameScene extends Phaser.Scene {
         this.player.level = 1;
         this.player.speed = 140; // Assez rapide, c'est un ado
 
-        // Ajuster l'échelle et la hitbox pour les sprites Ludo.ai
-        // Les sprites font ~1700px de haut, on les réduit drastiquement
-        this.player.setScale(0.02); // 1700 * 0.02 = ~34px de haut
-        this.player.body.setSize(12, 20);
-        this.player.body.setOffset(2, 12); // Ajuster l'offset pour l'échelle réduite
+        // Ajuster l'échelle pour les sprites Ludo.ai
+        // Les sprites font ~1700px de haut, on les réduit pour faire 2 blocs (64px)
+        // 64px / 1700px = 0.0376
+        this.player.setScale(0.038); // 1700 * 0.038 = ~64px de haut (2 blocs)
+        // La hitbox est configurée dans Player.js (2 blocs = 64px)
 
         // Système de compétences principal
         this.player.skills = {
@@ -117,6 +117,9 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.startFollow(this.player);
         this.cameras.main.setLerp(0.1, 0.1);
         this.cameras.main.setZoom(1.2); // Zoom un peu plus proche pour l'ambiance
+
+        // Debug: afficher la hitbox (désactiver en production)
+        this.physics.world.createDebugGraphic();
 
         // Effet de vignette pour l'ambiance sombre
         this.createVignetteEffect();

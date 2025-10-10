@@ -7,9 +7,14 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
         // Configuration physique - ajustée pour les sprites haute résolution de Ludo.ai
         this.setCollideWorldBounds(true);
-        // Les sprites font ~1700px de haut, avec échelle 0.02 = ~34px
-        this.body.setSize(12, 20); // Hitbox de taille raisonnable
-        this.body.setOffset(6, 14); // Centré sur le personnage
+        // Les sprites font ~1700px de haut, avec échelle 0.038 = ~64px (2 blocs)
+        // 1 tile = 32px, donc 2 blocs = 64px
+        this.body.setSize(28, 60); // Hitbox de 2 blocs de haut (60px pour laisser espace en haut)
+        this.body.setOffset(2, 4); // Centré avec petit espace en haut
+
+        // Debug: afficher la hitbox
+        this.body.debugShowBody = true;
+        this.body.debugBodyColor = 0x00ff00;
 
         // Stats du joueur
         this.maxHp = 100;
@@ -23,6 +28,15 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.facing = 'down';
         this.isMoving = false;
         this.canMove = true;
+        this.isCrouching = false;
+
+        // Dimensions de la hitbox (1 bloc = 32px)
+        this.normalHeight = 60;  // 2 blocs (60px avec espace en haut)
+        this.normalWidth = 28;
+        this.crouchHeight = 30;  // 1 bloc
+        this.normalOffsetX = 2;
+        this.normalOffsetY = 4;
+        this.crouchOffsetY = 34; // Positionner la hitbox en bas quand accroupi
 
         // Inventaire
         this.inventory = [
@@ -31,7 +45,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         ];
 
         // Contrôles
-        this.keys = scene.input.keyboard.addKeys('W,S,A,D,SPACE,E');
+        this.keys = scene.input.keyboard.addKeys('W,S,A,D,SPACE,E,SHIFT');
         this.cursors = scene.input.keyboard.createCursorKeys();
 
         // Interface utilisateur
@@ -73,12 +87,33 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     update() {
         if (!this.canMove) return;
 
+        this.handleCrouch();
         this.handleMovement();
         this.handleActions();
     }
 
+    handleCrouch() {
+        // Gérer l'état d'accroupissement
+        if (this.keys.SHIFT.isDown) {
+            if (!this.isCrouching) {
+                this.isCrouching = true;
+                // Ajuster la hitbox pour être 1 bloc de haut (~30px)
+                this.body.setSize(this.normalWidth, this.crouchHeight);
+                this.body.setOffset(this.normalOffsetX, this.crouchOffsetY);
+            }
+        } else {
+            if (this.isCrouching) {
+                this.isCrouching = false;
+                // Restaurer la hitbox normale de 2 blocs (~60px)
+                this.body.setSize(this.normalWidth, this.normalHeight);
+                this.body.setOffset(this.normalOffsetX, this.normalOffsetY);
+            }
+        }
+    }
+
     handleMovement() {
-        const speed = this.speed;
+        // Vitesse réduite de 50% quand accroupi
+        const speed = this.isCrouching ? this.speed * 0.5 : this.speed;
         let velocityX = 0;
         let velocityY = 0;
 
