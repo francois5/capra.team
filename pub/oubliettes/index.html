@@ -4,24 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oubliettes</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect fill='%23000' width='64' height='64'/><circle cx='32' cy='36' r='14' fill='%234a148c'/><path d='M 18 36 L 32 10 L 46 36 Z' fill='%236a1b9a'/><circle cx='28' cy='32' r='2' fill='%23fff'/><circle cx='36' cy='32' r='2' fill='%23fff'/><path d='M 26 38 Q 32 42 38 38' stroke='%23fff' stroke-width='1.5' fill='none'/><rect x='28' y='48' width='8' height='10' fill='%234a148c'/><rect x='20' y='38' width='8' height='8' fill='%236a1b9a'/><rect x='36' y='38' width='8' height='8' fill='%236a1b9a'/><circle cx='32' cy='16' r='2' fill='%23ffeb3b'/><path d='M 30 12 L 32 8 L 34 12' fill='%23ffeb3b'/><circle cx='24' cy='14' r='1.5' fill='%23ffeb3b'/><circle cx='40' cy='14' r='1.5' fill='%23ffeb3b'/><circle cx='28' cy='10' r='1' fill='%23ffeb3b'/><circle cx='36' cy='10' r='1' fill='%23ffeb3b'/></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect fill='%23000' width='64' height='64'/><circle cx='32' cy='38' r='12' fill='%23daa520'/><circle cx='28' cy='35' r='2' fill='%23000'/><circle cx='36' cy='35' r='2' fill='%23000'/><path d='M 26 40 Q 32 43 38 40' stroke='%23000' stroke-width='1.5' fill='none'/><path d='M 20 28 L 32 8 L 44 28 Z' fill='%234a148c'/><circle cx='32' cy='12' r='3' fill='%23ffeb3b'/><path d='M 30 8 L 32 4 L 34 8' fill='%23ffeb3b'/><circle cx='26' cy='10' r='1.5' fill='%23ffeb3b'/><circle cx='38' cy='10' r='1.5' fill='%23ffeb3b'/><rect x='28' y='48' width='8' height='10' fill='%236a1b9a' rx='1'/><path d='M 20 50 L 18 54 L 22 52 Z' fill='%234a148c'/><path d='M 44 50 L 46 54 L 42 52 Z' fill='%234a148c'/><circle cx='15' cy='30' r='2' fill='%23ffeb3b' opacity='0.7'/><circle cx='49' cy='30' r='2' fill='%23ffeb3b' opacity='0.7'/><circle cx='12' cy='38' r='1.5' fill='%23ffeb3b' opacity='0.5'/><circle cx='52' cy='38' r='1.5' fill='%23ffeb3b' opacity='0.5'/></svg>">
     <style>
         body {
             margin: 0;
             padding: 0;
-            background: #1a1a1a;
+            background: #000;
             font-family: 'Arial', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+            width: 100vw;
+            height: 100vh;
             overflow: hidden;
         }
 
         #gameCanvas {
-            border: 4px solid #654321;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            display: block;
+            width: 100%;
+            height: 100%;
             image-rendering: pixelated;
             cursor: crosshair;
         }
@@ -65,17 +63,21 @@
     <div id="loading">🔄 Chargement d'Oubliettes...</div>
 
     <div id="info" style="display:none;">
-        <div>🎮 <strong>Oubliettes</strong></div>
+        <div>🧙 <strong>Oubliettes</strong></div>
         <div>Blocs minés: <span id="minedCount">0</span></div>
         <div>Position: <span id="position">0, 0</span></div>
-        <div>Hauteur: <span id="playerHeight">2</span> blocs</div>
+        <div>Profondeur: <span id="depth">0</span> blocs sous la surface</div>
         <div>État: <span id="playerState">Debout</span></div>
+        <div>❤️ Santé: <span id="health">200</span> / 200 <span id="restIndicator"></span></div>
+        <div>✨ Mana: <span id="mana">100</span> / 100</div>
+        <div>👥 Alliés: <span id="allies">0</span> / <span id="maxAllies">0</span></div>
+        <div id="debugMode" style="display:none; color: #FFD700;">📷 Mode Caméra Libre (B pour désactiver)</div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
     <div id="controls" style="display:none;">
-        ⬅️ Q : Gauche | ➡️ D : Droite | ⬆️ Z/W/Espace : Sauter | ⬇️ S/Shift : S'accroupir | 🔧 E : Interagir | 🖱️ Clic : Creuser/Placer
+        ⬅️ Q : Gauche | ➡️ D : Droite | ⬆️ Z/W : Sauter | ⬇️ S/Shift : S'accroupir | ⚔️ Espace : Attaquer | 🙏 E : Invoquer | 🖱️ Clic : Creuser/Placer
     </div>
 
     <script>
@@ -85,13 +87,23 @@
         // Configuration
         const BLOCK_SIZE = 32;
         const GRID_WIDTH = 100;
-        const GRID_HEIGHT = 80;
-        const VIEWPORT_WIDTH = 25;
-        const VIEWPORT_HEIGHT = 20;
-        canvas.width = VIEWPORT_WIDTH * BLOCK_SIZE;
-        canvas.height = VIEWPORT_HEIGHT * BLOCK_SIZE;
+        const GRID_HEIGHT = 256;  // 256 blocs de haut: bedrock en bas, surface infranchissable en haut
+        let VIEWPORT_WIDTH = 25;
+        let VIEWPORT_HEIGHT = 20;
 
-        const VISION_RADIUS = 12;
+        // Fonction pour redimensionner le canvas en plein écran
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            VIEWPORT_WIDTH = Math.ceil(canvas.width / BLOCK_SIZE);
+            VIEWPORT_HEIGHT = Math.ceil(canvas.height / BLOCK_SIZE);
+        }
+
+        // Initialiser et écouter les changements de taille
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const VISION_RADIUS = 15;  // Rayon de vision augmenté pour le monde plus grand
 
         // Types de blocs
         const BLOCKS = {
@@ -99,7 +111,11 @@
             DIRT: 1,
             STONE: 2,
             GRASS: 3,
-            BEDROCK: 4
+            BEDROCK: 4,
+            TORCH: 5,              // Torche (territoire de la Lumière)
+            STAIRS: 6,             // Escalier vers la surface
+            STONE_LIGHT: 7,        // Pierre marquée Lumière
+            STONE_SHADOW: 8        // Pierre marquée Ombre
         };
 
         const BLOCK_COLORS = {
@@ -107,8 +123,25 @@
             [BLOCKS.DIRT]: '#8B4513',
             [BLOCKS.STONE]: '#808080',
             [BLOCKS.GRASS]: '#7CFC00',
-            [BLOCKS.BEDROCK]: '#1a1a1a'
+            [BLOCKS.BEDROCK]: '#1a1a1a',
+            [BLOCKS.TORCH]: '#FFD700',         // Or/jaune
+            [BLOCKS.STAIRS]: '#A0522D',        // Brun foncé
+            [BLOCKS.STONE_LIGHT]: '#A9A9A9',   // Pierre grise claire
+            [BLOCKS.STONE_SHADOW]: '#696969'   // Pierre grise foncée
         };
+
+        // Territoires des grottes
+        const TERRITORY_TYPES = {
+            NEUTRAL: 0,
+            LIGHT: 1,    // Territoire de la Lumière (gardiens, torches, escalier)
+            SHADOW: 2    // Territoire de l'Ombre (créatures)
+        };
+
+        // Stocker les territoires et entités
+        let territories = [];
+        let entities = [];
+        let caveMarkers = [];  // Marqueurs sur les bords des grottes
+        let stairwayLocations = [];  // Position des escaliers (pour affichage de l'art)
 
         // Grille du monde
         let world = [];
@@ -117,7 +150,11 @@
         // Caméra
         const camera = {
             x: 0,
-            y: 0
+            y: 0,
+            freeView: false,  // Mode debug de caméra libre
+            freeX: 0,
+            freeY: 0,
+            freeSpeed: 1  // Vitesse de déplacement en mode libre
         };
 
         // Sprites
@@ -129,6 +166,13 @@
             heroCrawlRight: null,
             heroCrouchIdle: null,
             heroJump: null,
+            stairway: null,
+            blackRam: null,
+            ratmanIdle: null,
+            ratmanWalkLeft: null,
+            ratmanWalkRight: null,
+            ratmanAttackLeft: null,
+            ratmanAttackRight: null,
             loaded: false
         };
 
@@ -136,7 +180,7 @@
         function loadSprites() {
             return new Promise((resolve) => {
                 let loadedCount = 0;
-                const totalSprites = 7;
+                const totalSprites = 14;  // 7 héros + 1 escalier + 1 bélier + 5 homme-rat
 
                 function checkComplete() {
                     loadedCount++;
@@ -180,6 +224,41 @@
                 sprites.heroJump.onload = checkComplete;
                 sprites.heroJump.onerror = () => { console.warn('Jump sprite non chargé'); checkComplete(); };
                 sprites.heroJump.src = 'assets/sprites/hero/jump-256px-16.png';
+
+                sprites.stairway = new Image();
+                sprites.stairway.onload = checkComplete;
+                sprites.stairway.onerror = () => { console.warn('Stairway art non chargé'); checkComplete(); };
+                sprites.stairway.src = 'assets/art/stairway.webp';
+
+                sprites.blackRam = new Image();
+                sprites.blackRam.onload = checkComplete;
+                sprites.blackRam.onerror = () => { console.warn('Black ram sprite non chargé'); checkComplete(); };
+                sprites.blackRam.src = 'assets/sprites/black-ram/black-sheep-256px-16.png';
+
+                sprites.ratmanIdle = new Image();
+                sprites.ratmanIdle.onload = checkComplete;
+                sprites.ratmanIdle.onerror = () => { console.warn('Ratman idle sprite non chargé'); checkComplete(); };
+                sprites.ratmanIdle.src = 'assets/sprites/giant-rat/idle-256px-16.png';
+
+                sprites.ratmanWalkLeft = new Image();
+                sprites.ratmanWalkLeft.onload = checkComplete;
+                sprites.ratmanWalkLeft.onerror = () => { console.warn('Ratman walk-left sprite non chargé'); checkComplete(); };
+                sprites.ratmanWalkLeft.src = 'assets/sprites/giant-rat/walk-left-giant-rat-256px-16.png';
+
+                sprites.ratmanWalkRight = new Image();
+                sprites.ratmanWalkRight.onload = checkComplete;
+                sprites.ratmanWalkRight.onerror = () => { console.warn('Ratman walk-right sprite non chargé'); checkComplete(); };
+                sprites.ratmanWalkRight.src = 'assets/sprites/giant-rat/walk-right-giant-rat-256px-16.png';
+
+                sprites.ratmanAttackLeft = new Image();
+                sprites.ratmanAttackLeft.onload = checkComplete;
+                sprites.ratmanAttackLeft.onerror = () => { console.warn('Ratman attack-left sprite non chargé'); checkComplete(); };
+                sprites.ratmanAttackLeft.src = 'assets/sprites/giant-rat/attaque-left-256px-16.png';
+
+                sprites.ratmanAttackRight = new Image();
+                sprites.ratmanAttackRight.onload = checkComplete;
+                sprites.ratmanAttackRight.onerror = () => { console.warn('Ratman attack-right sprite non chargé'); checkComplete(); };
+                sprites.ratmanAttackRight.src = 'assets/sprites/giant-rat/attaque-right-256px-16.png';
             });
         }
 
@@ -251,7 +330,7 @@
         // Joueur
         const player = {
             x: GRID_WIDTH / 2,
-            y: GRID_HEIGHT / 2,
+            y: GRID_HEIGHT * 0.8,  // Départ proche de la surface (80% de la hauteur)
             width: 0.6,
             height: 1.8,
             normalHeight: 1.8,
@@ -266,23 +345,269 @@
             facing: 'right',  // Direction du regard
             isMoving: false,
             animFrame: 0,
-            animSpeed: 0.05  // Réduit de 0.08 à 0.05 pour ralentir les animations
+            animSpeed: 0.05,  // Réduit de 0.08 à 0.05 pour ralentir les animations
+
+            // Système de combat
+            isAttacking: false,
+            attackCooldown: 0,
+            attackRange: 1.5,  // Portée d'attaque
+            attackDamage: 10,  // Dégâts par attaque
+
+            // Système de magie
+            mana: 100,
+            maxMana: 100,
+            manaRegen: 0.1,  // Régénération par frame
+
+            // Système d'alliés
+            maxAllies: 0,  // Nombre maximum de monstres alliés (augmente avec chaque bélier converti)
+            currentAllies: 0,  // Nombre actuel de monstres alliés
+
+            // Système de santé
+            health: 200,
+            maxHealth: 200,
+            healthRegen: 4 / 60,  // Régénération: 4 HP par seconde = 4/60 par frame
+            restTimer: 0  // Compteur pour le repos (2 secondes = 120 frames)
         };
 
         const GRAVITY = 0.03;
         const MAX_FALL_SPEED = 0.8;
 
+        // Détecter les grottes (zones d'air connectées)
+        function detectCaves() {
+            const caves = [];
+            const visited = Array(GRID_HEIGHT).fill(null).map(() => Array(GRID_WIDTH).fill(false));
+
+            function floodFill(startX, startY) {
+                const cave = [];
+                const stack = [[startX, startY]];
+
+                while (stack.length > 0) {
+                    const [x, y] = stack.pop();
+
+                    if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) continue;
+                    if (visited[y][x] || world[y][x] !== BLOCKS.AIR) continue;
+
+                    visited[y][x] = true;
+                    cave.push([x, y]);
+
+                    // Vérifier les 4 directions
+                    stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+                }
+
+                return cave;
+            }
+
+            // Parcourir la grille pour trouver toutes les grottes
+            for (let y = 1; y < GRID_HEIGHT - 20; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    if (world[y][x] === BLOCKS.AIR && !visited[y][x]) {
+                        const cave = floodFill(x, y);
+                        // Grottes moyennes: entre 40 et 300 blocs
+                        if (cave.length >= 40 && cave.length <= 300) {
+                            caves.push(cave);
+                        }
+                    }
+                }
+            }
+
+            console.log(`🏔️ ${caves.length} grottes détectées`);
+            return caves;
+        }
+
+        // Trouver les bords d'une grotte (blocs solides adjacents à l'air de la grotte)
+        function findCaveBorders(cave) {
+            const borders = [];
+            const caveSet = new Set(cave.map(([x, y]) => `${x},${y}`));
+
+            for (const [x, y] of cave) {
+                // Vérifier les 8 directions (incluant diagonales)
+                const neighbors = [
+                    [x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1],
+                    [x - 1, y - 1], [x + 1, y - 1], [x - 1, y + 1], [x + 1, y + 1]
+                ];
+
+                for (const [nx, ny] of neighbors) {
+                    if (nx >= 0 && nx < GRID_WIDTH && ny >= 0 && ny < GRID_HEIGHT) {
+                        // Si le voisin n'est pas dans la grotte et est un bloc solide
+                        if (!caveSet.has(`${nx},${ny}`) && world[ny][nx] !== BLOCKS.AIR) {
+                            const borderKey = `${nx},${ny}`;
+                            if (!borders.some(([bx, by]) => `${bx},${by}` === borderKey)) {
+                                borders.push([nx, ny]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return borders;
+        }
+
+        // Assigner des territoires aux grottes
+        function assignTerritories(caves) {
+            territories = [];
+            entities = [];
+            caveMarkers = [];
+            stairwayLocations = [];
+
+            for (const cave of caves) {
+                // Probabilité: 10% Lumière, 40% Ombre, 50% Neutre
+                const rand = Math.random();
+                let territoryType = TERRITORY_TYPES.NEUTRAL;
+
+                if (rand < 0.10) {
+                    territoryType = TERRITORY_TYPES.LIGHT;
+                } else if (rand < 0.50) {
+                    territoryType = TERRITORY_TYPES.SHADOW;
+                }
+
+                if (territoryType !== TERRITORY_TYPES.NEUTRAL) {
+                    // Calculer le centre de la grotte
+                    const centerX = Math.floor(cave.reduce((sum, [x]) => sum + x, 0) / cave.length);
+                    const centerY = Math.floor(cave.reduce((sum, [, y]) => sum + y, 0) / cave.length);
+
+                    territories.push({
+                        type: territoryType,
+                        cave: cave,
+                        centerX: centerX,
+                        centerY: centerY
+                    });
+
+                    // Trouver et marquer les bords de la grotte
+                    const borders = findCaveBorders(cave);
+                    const marker = territoryType === TERRITORY_TYPES.LIGHT ? '🌟' : '🌑';
+                    const stoneType = territoryType === TERRITORY_TYPES.LIGHT ? BLOCKS.STONE_LIGHT : BLOCKS.STONE_SHADOW;
+
+                    for (const [bx, by] of borders) {
+                        // Remplacer la pierre par de la pierre marquée
+                        if (world[by][bx] === BLOCKS.STONE || world[by][bx] === BLOCKS.DIRT) {
+                            world[by][bx] = stoneType;
+                        }
+
+                        caveMarkers.push({
+                            x: bx,
+                            y: by,
+                            symbol: marker,
+                            type: territoryType
+                        });
+                    }
+
+                    if (territoryType === TERRITORY_TYPES.LIGHT) {
+                        // Créer un escalier vers la surface
+                        createStaircase(centerX, centerY);
+
+                        // Placer des torches
+                        placeTorches(cave, 5);
+
+                        console.log(`💡 Territoire de la Lumière créé en (${centerX}, ${centerY}) avec ${borders.length} marqueurs`);
+                    } else if (territoryType === TERRITORY_TYPES.SHADOW) {
+                        // Créer un bélier noir au centre de la grotte
+                        entities.push({
+                            type: 'black_ram',
+                            x: centerX,
+                            y: centerY,
+                            color: '#4B0082',
+                            animFrame: 0,
+                            animSpeed: 0.05,
+                            alignment: 'shadow',      // Alignement Ombre
+                            summonTimer: 0,           // Timer pour invoquer des monstres
+                            summonInterval: 300,      // Invoquer toutes les 5 secondes (300 frames à 60fps)
+                            maxSummons: 1,            // Maximum 1 monstre invoqué à la fois
+                            currentSummons: 0,        // Nombre actuel de monstres invoqués
+                            loyalty: 100,             // Loyauté du bélier (0-100)
+                            maxLoyalty: 100,
+                            health: 100,              // Points de vie du bélier
+                            maxHealth: 100,
+                            invokeCooldown: 0         // Cooldown pour invoquer devant le bélier
+                        });
+
+                        console.log(`🌑 Territoire de l'Ombre créé en (${centerX}, ${centerY}) avec ${borders.length} marqueurs et 1 bélier`);
+                    }
+                }
+            }
+
+            console.log(`📍 ${caveMarkers.length} marqueurs de territoire placés`);
+        }
+
+        // Créer un escalier vers la surface
+        function createStaircase(startX, startY) {
+            let x = startX;
+            let y = startY;
+
+            // Créer un sol horizontal de 3 blocs pour poser l'escalier
+            const floorY = y;
+            for (let fx = startX - 1; fx <= startX + 1; fx++) {
+                if (fx >= 0 && fx < GRID_WIDTH && floorY > 0) {
+                    world[floorY][fx] = BLOCKS.STONE;  // Sol en pierre
+                    // Dégager l'espace au-dessus
+                    if (floorY + 1 < GRID_HEIGHT) world[floorY + 1][fx] = BLOCKS.AIR;
+                    if (floorY + 2 < GRID_HEIGHT) world[floorY + 2][fx] = BLOCKS.AIR;
+                    if (floorY + 3 < GRID_HEIGHT) world[floorY + 3][fx] = BLOCKS.AIR;
+                }
+            }
+
+            // Enregistrer la position du sol pour l'art de l'escalier (posé SUR le sol)
+            stairwayLocations.push({
+                x: startX,
+                y: floorY + 1,  // 1 bloc au-dessus du sol
+                loyalty: 100,   // Loyauté de l'escalier (0-100)
+                maxLoyalty: 100,
+                invokeCooldown: 0  // Cooldown pour invoquer
+            });
+
+            // Monter jusqu'à la zone de protection du château
+            while (y < GRID_HEIGHT - 25) {
+                if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT - 20) {
+                    world[y][x] = BLOCKS.STAIRS;
+                    // Créer de l'espace autour de l'escalier
+                    if (x + 1 < GRID_WIDTH) world[y][x + 1] = BLOCKS.AIR;
+                    if (x - 1 >= 0) world[y][x - 1] = BLOCKS.AIR;
+                }
+                y++;
+                // Varier légèrement la position x pour un effet naturel
+                if (Math.random() > 0.7) {
+                    x += Math.random() > 0.5 ? 1 : -1;
+                }
+            }
+        }
+
+        // Placer des torches dans une grotte
+        function placeTorches(cave, count) {
+            const positions = [...cave];
+            for (let i = 0; i < count && positions.length > 0; i++) {
+                const idx = Math.floor(Math.random() * positions.length);
+                const [x, y] = positions.splice(idx, 1)[0];
+
+                // Placer une torche si il y a un mur adjacent
+                if (y > 0 && world[y - 1][x] !== BLOCKS.AIR) {
+                    world[y][x] = BLOCKS.TORCH;
+                }
+            }
+        }
+
         // Initialiser le monde
         function initWorld() {
             console.log('🌍 Génération du monde avec Perlin noise...');
             world = [];
-            const scale = 0.05;
-            const caveThreshold = 0.3;
+            const scale = 0.05;  // Échelle augmentée pour des grottes plus petites
+            const caveThreshold = 0.35;  // Seuil augmenté pour moins d'air
 
             for (let y = 0; y < GRID_HEIGHT; y++) {
                 world[y] = [];
                 for (let x = 0; x < GRID_WIDTH; x++) {
+                    // Bedrock en bas (niveau 0)
                     if (y === 0) {
+                        world[y][x] = BLOCKS.BEDROCK;
+                        continue;
+                    }
+
+                    // Surface infranchissable en haut (niveau 255) - Château de la Lumière
+                    if (y === GRID_HEIGHT - 1) {
+                        world[y][x] = BLOCKS.BEDROCK;
+                        continue;
+                    }
+
+                    // Zone de protection du château (20 blocs sous la surface)
+                    if (y >= GRID_HEIGHT - 20) {
                         world[y][x] = BLOCKS.BEDROCK;
                         continue;
                     }
@@ -292,33 +617,64 @@
                     if (noiseValue > caveThreshold) {
                         world[y][x] = BLOCKS.AIR;
                     } else {
-                        const depth = GRID_HEIGHT - y;
-                        if (depth < 10) {
-                            world[y][x] = BLOCKS.DIRT;
-                        } else if (depth < 40) {
+                        const depth = y;  // Profondeur depuis le bas
+                        if (depth < 30) {
+                            world[y][x] = BLOCKS.BEDROCK;
+                        } else if (depth < 150) {
+                            // Plus de pierre (au lieu de 100)
                             world[y][x] = BLOCKS.STONE;
                         } else {
-                            world[y][x] = BLOCKS.BEDROCK;
+                            world[y][x] = BLOCKS.DIRT;
                         }
                     }
                 }
             }
 
-            // Grotte de départ au centre
+            // Grotte de départ proche de la surface (20% depuis le haut)
             const centerX = Math.floor(GRID_WIDTH / 2);
-            const centerY = Math.floor(GRID_HEIGHT / 2);
+            const centerY = Math.floor(GRID_HEIGHT * 0.8);  // 80% de la hauteur
             for (let dy = -3; dy <= 3; dy++) {
                 for (let dx = -3; dx <= 3; dx++) {
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     if (dist <= 3) {
                         const y = centerY + dy;
                         const x = centerX + dx;
-                        if (y > 0 && y < GRID_HEIGHT && x >= 0 && x < GRID_WIDTH) {
+                        if (y > 0 && y < GRID_HEIGHT - 20 && x >= 0 && x < GRID_WIDTH) {
                             world[y][x] = BLOCKS.AIR;
                         }
                     }
                 }
             }
+
+            // Détecter les grottes et assigner les territoires
+            const caves = detectCaves();
+            assignTerritories(caves);
+
+            // Ajouter le rat géant co-détenu au départ (non converti)
+            entities.push({
+                type: 'ratman',
+                x: centerX + 2,  // À côté du joueur
+                y: centerY,
+                vx: 0,
+                vy: 0,
+                color: '#8B4513',  // Marron (shadow)
+                animFrame: 0,
+                animSpeed: 0.05,
+                summonedBy: null,
+                lifetime: Infinity,  // Ne disparaît jamais
+                facing: 'left',
+                isMoving: false,
+                isAttacking: false,
+                attackCooldown: 0,
+                health: 100,
+                maxHealth: 100,
+                loyalty: 100,  // Loyauté à 100 = doit être converti
+                maxLoyalty: 100,
+                alignment: 'shadow'  // Alignement Ombre (pas encore converti)
+            });
+            player.currentAllies = 0;  // Commencer avec 0 allié
+            player.maxAllies = 1;  // Et 1 place d'allié disponible
+            console.log('🐀 Rat géant co-détenu ajouté dans la grotte de départ');
 
             console.log('✅ Monde généré !');
         }
@@ -405,9 +761,30 @@
 
         // Mettre à jour la caméra
         function updateCamera() {
-            camera.x = player.x - VIEWPORT_WIDTH / 2;
-            camera.y = player.y - VIEWPORT_HEIGHT / 2;
+            if (camera.freeView) {
+                // Mode caméra libre: contrôles ZQSD/flèches
+                if (keys['z'] || keys['w'] || keys['arrowup']) {
+                    camera.freeY += camera.freeSpeed;
+                }
+                if (keys['s'] || keys['arrowdown']) {
+                    camera.freeY -= camera.freeSpeed;
+                }
+                if (keys['q'] || keys['a'] || keys['arrowleft']) {
+                    camera.freeX -= camera.freeSpeed;
+                }
+                if (keys['d'] || keys['arrowright']) {
+                    camera.freeX += camera.freeSpeed;
+                }
 
+                camera.x = camera.freeX;
+                camera.y = camera.freeY;
+            } else {
+                // Mode normal: suivre le joueur
+                camera.x = player.x - VIEWPORT_WIDTH / 2;
+                camera.y = player.y - VIEWPORT_HEIGHT / 2;
+            }
+
+            // Limites de la caméra
             camera.x = Math.max(0, Math.min(GRID_WIDTH - VIEWPORT_WIDTH, camera.x));
             camera.y = Math.max(0, Math.min(GRID_HEIGHT - VIEWPORT_HEIGHT, camera.y));
         }
@@ -440,13 +817,45 @@
                         ctx.fillStyle = BLOCK_COLORS[blockType];
                         ctx.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE);
 
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                        ctx.fillRect(screenX, screenY, BLOCK_SIZE, 2);
-                        ctx.fillRect(screenX, screenY, 2, BLOCK_SIZE);
+                        // Effet spécial pour les torches (lueur)
+                        if (blockType === BLOCKS.TORCH) {
+                            const gradient = ctx.createRadialGradient(
+                                screenX + BLOCK_SIZE / 2, screenY + BLOCK_SIZE / 2, 0,
+                                screenX + BLOCK_SIZE / 2, screenY + BLOCK_SIZE / 2, BLOCK_SIZE * 2
+                            );
+                            gradient.addColorStop(0, 'rgba(255, 215, 0, 0.4)');
+                            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                            ctx.fillStyle = gradient;
+                            ctx.fillRect(screenX - BLOCK_SIZE, screenY - BLOCK_SIZE, BLOCK_SIZE * 3, BLOCK_SIZE * 3);
+                        }
 
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-                        ctx.fillRect(screenX, screenY + BLOCK_SIZE - 2, BLOCK_SIZE, 2);
-                        ctx.fillRect(screenX + BLOCK_SIZE - 2, screenY, 2, BLOCK_SIZE);
+                        // Afficher les marqueurs de territoire sur les bords des grottes
+                        const marker = caveMarkers.find(m => m.x === x && m.y === y);
+                        if (marker) {
+                            // Fond semi-transparent
+                            const bgColor = marker.type === TERRITORY_TYPES.LIGHT
+                                ? 'rgba(255, 215, 0, 0.3)'
+                                : 'rgba(75, 0, 130, 0.3)';
+                            ctx.fillStyle = bgColor;
+                            ctx.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE);
+
+                            // Emoji
+                            ctx.font = '20px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(marker.symbol, screenX + BLOCK_SIZE / 2, screenY + BLOCK_SIZE / 2);
+                        }
+
+                        // Bordures 3D (sauf pour torches et escaliers)
+                        if (blockType !== BLOCKS.TORCH && blockType !== BLOCKS.STAIRS && blockType !== BLOCKS.AIR) {
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                            ctx.fillRect(screenX, screenY, BLOCK_SIZE, 2);
+                            ctx.fillRect(screenX, screenY, 2, BLOCK_SIZE);
+
+                            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                            ctx.fillRect(screenX, screenY + BLOCK_SIZE - 2, BLOCK_SIZE, 2);
+                            ctx.fillRect(screenX + BLOCK_SIZE - 2, screenY, 2, BLOCK_SIZE);
+                        }
                     }
 
                     if (distance <= VISION_RADIUS) {
@@ -461,10 +870,460 @@
                         ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
                         ctx.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE);
                     }
+
+                    // Effet de lumière du Château (lueur dorée en haut)
+                    if (y >= GRID_HEIGHT - 30) {
+                        const distanceFromTop = GRID_HEIGHT - y;
+                        const lightIntensity = (30 - distanceFromTop) / 30;  // 0 à 1
+                        const alpha = lightIntensity * 0.3;
+                        ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;  // Or doré
+                        ctx.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE);
+                    }
                 }
             }
 
             drawPlayer();
+            drawStairways();
+            drawEntities();
+            drawInvocationLightning();
+        }
+
+        // Dessiner l'éclair magique d'invocation
+        function drawInvocationLightning() {
+            if (!isInvoking || !currentInvokeTarget) return;
+
+            // Calculer les positions de départ (joueur) et d'arrivée (cible)
+            const startX = (player.x - camera.x) * BLOCK_SIZE + (player.width * BLOCK_SIZE) / 2;
+            const startY = canvas.height - ((player.y - camera.y + player.normalHeight / 2) * BLOCK_SIZE);
+
+            let endX, endY;
+            if (currentInvokeTarget.type === 'ratman' || currentInvokeTarget.type === 'black_ram' || currentInvokeTarget.type === 'golden_ram') {
+                endX = (currentInvokeTarget.x - camera.x) * BLOCK_SIZE + BLOCK_SIZE / 2;
+                endY = canvas.height - ((currentInvokeTarget.y - camera.y + 1) * BLOCK_SIZE);
+            } else {
+                // Pour les escaliers
+                endX = (currentInvokeTarget.x - camera.x) * BLOCK_SIZE;
+                endY = canvas.height - ((currentInvokeTarget.y - camera.y) * BLOCK_SIZE);
+            }
+
+            // Dessiner l'éclair bleu avec effet d'ondulation
+            ctx.save();
+            ctx.strokeStyle = `rgba(0, 150, 255, ${0.7 + Math.sin(Date.now() / 50) * 0.3})`;
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00AAFF';
+            ctx.shadowBlur = 15;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+
+            // Créer un éclair avec segments en zigzag
+            const segments = 6;
+            const zigzagAmount = 20;
+
+            for (let i = 1; i < segments; i++) {
+                const t = i / segments;
+                const baseX = startX + (endX - startX) * t;
+                const baseY = startY + (endY - startY) * t;
+
+                // Ajouter une ondulation perpendiculaire
+                const dx = endX - startX;
+                const dy = endY - startY;
+                const perpX = -dy;
+                const perpY = dx;
+                const length = Math.sqrt(perpX * perpX + perpY * perpY);
+                const offsetAmount = (Math.sin(Date.now() / 30 + i) * zigzagAmount);
+                const offsetX = (perpX / length) * offsetAmount;
+                const offsetY = (perpY / length) * offsetAmount;
+
+                ctx.lineTo(baseX + offsetX, baseY + offsetY);
+            }
+
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+
+            // Dessiner un deuxième éclair plus fin et plus brillant
+            ctx.strokeStyle = `rgba(150, 200, 255, ${0.9})`;
+            ctx.lineWidth = 1;
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // Dessiner une barre de santé et de loyauté pour une créature
+        function drawCreatureBars(centerX, y, health, maxHealth, loyalty, maxLoyalty, alignment, convertedByPlayer) {
+            const barWidth = 50;
+            const barHeight = 5;
+            const barSpacing = 2;  // Espacement entre les deux barres
+            const x = centerX - barWidth / 2;
+
+            // Barre de santé (rouge) en haut
+            if (health !== undefined && maxHealth !== undefined) {
+                // Fond noir
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
+
+                // Barre grise (vide)
+                ctx.fillStyle = '#333';
+                ctx.fillRect(x, y, barWidth, barHeight);
+
+                // Barre de santé (rouge)
+                const healthPercent = health / maxHealth;
+                const healthWidth = barWidth * healthPercent;
+                ctx.fillStyle = '#FF0000';  // Rouge
+                ctx.fillRect(x, y, healthWidth, barHeight);
+
+                // Bordure blanche
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, barWidth, barHeight);
+            }
+
+            // Barre de loyauté en bas
+            if (loyalty !== undefined && maxLoyalty !== undefined) {
+                const loyaltyY = y + barHeight + barSpacing;
+
+                // Fond noir
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(x - 2, loyaltyY - 2, barWidth + 4, barHeight + 4);
+
+                // Barre de loyauté (couleur selon l'alignment)
+                const loyaltyPercent = loyalty / maxLoyalty;
+                const loyaltyWidth = barWidth * loyaltyPercent;
+
+                // Couleur selon l'alignment et si converti par le joueur
+                let barColor;
+                let backgroundColor;
+                if (convertedByPlayer) {
+                    barColor = '#FF6B00';  // Orange (converti par le joueur)
+                    backgroundColor = '#333';  // Fond gris foncé
+                } else if (alignment === 'shadow') {
+                    barColor = '#000000';  // Noir (créature d'ombre)
+                    backgroundColor = '#FF6B00';  // Fond orange pour contraste
+                } else if (alignment === 'light') {
+                    barColor = '#FFD700';  // Or (créature de lumière naturelle)
+                    backgroundColor = '#333';  // Fond gris foncé
+                } else {
+                    barColor = '#888888';  // Gris (neutre/inconnu)
+                    backgroundColor = '#333';  // Fond gris foncé
+                }
+
+                // Dessiner le fond avec la couleur adaptée
+                ctx.fillStyle = backgroundColor;
+                ctx.fillRect(x, loyaltyY, barWidth, barHeight);
+
+                // Dessiner la barre de loyauté
+                ctx.fillStyle = barColor;
+                ctx.fillRect(x, loyaltyY, loyaltyWidth, barHeight);
+
+                // Bordure blanche
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, loyaltyY, barWidth, barHeight);
+            }
+        }
+
+        // Dessiner une barre de loyauté (ancienne fonction, conservée pour compatibilité)
+        function drawLoyaltyBar(centerX, y, loyalty, maxLoyalty) {
+            const barWidth = 50;
+            const barHeight = 6;
+            const x = centerX - barWidth / 2;
+
+            // Fond noir
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
+
+            // Barre grise (vide)
+            ctx.fillStyle = '#333';
+            ctx.fillRect(x, y, barWidth, barHeight);
+
+            // Barre de loyauté (rouge -> jaune -> vert selon le niveau)
+            const loyaltyPercent = loyalty / maxLoyalty;
+            const currentWidth = barWidth * loyaltyPercent;
+
+            // Couleur selon le niveau
+            let barColor;
+            if (loyaltyPercent > 0.6) {
+                barColor = '#4B0082';  // Violet (loyal à l'ombre)
+            } else if (loyaltyPercent > 0.3) {
+                barColor = '#FF6B00';  // Orange (neutre)
+            } else {
+                barColor = '#FF6B00';  // Orange (en conversion)
+            }
+
+            ctx.fillStyle = barColor;
+            ctx.fillRect(x, y, currentWidth, barHeight);
+
+            // Bordure blanche
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, barWidth, barHeight);
+        }
+
+        // Dessiner les escaliers avec l'art stairway.webp
+        function drawStairways() {
+            if (!sprites.stairway || !sprites.stairway.complete) return;
+
+            for (const stairway of stairwayLocations) {
+                const sx = (stairway.x - camera.x) * BLOCK_SIZE;
+                const sy = canvas.height - ((stairway.y - camera.y) * BLOCK_SIZE);
+
+                // Vérifier si l'escalier est visible
+                const dx = stairway.x - player.x;
+                const dy = stairway.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance <= VISION_RADIUS) {
+                    // L'image fait 864x1152, on la scale pour qu'elle fasse 3 blocs de large
+                    const scaledWidth = BLOCK_SIZE * 3;  // 3 blocs de large
+                    const scaledHeight = (sprites.stairway.height / sprites.stairway.width) * scaledWidth;
+
+                    // Centrer l'image sur la position de l'escalier, posé sur le sol
+                    const drawX = sx - scaledWidth / 2 + BLOCK_SIZE / 2;
+                    const drawY = sy - scaledHeight;  // Positionné en bas (sur le sol)
+
+                    ctx.save();
+                    ctx.globalAlpha = 0.9;  // Légèrement transparent pour se fondre
+                    ctx.drawImage(
+                        sprites.stairway,
+                        drawX,
+                        drawY,
+                        scaledWidth,
+                        scaledHeight
+                    );
+                    ctx.restore();
+
+                    // Dessiner la barre de loyauté pour l'escalier
+                    if (stairway.loyalty !== undefined) {
+                        drawLoyaltyBar(sx, drawY - 10, stairway.loyalty, stairway.maxLoyalty);
+                    }
+                }
+            }
+        }
+
+        // Dessiner les entités (gardiens, créatures)
+        function drawEntities() {
+            for (const entity of entities) {
+                const ex = (entity.x - camera.x) * BLOCK_SIZE;
+                const ey = canvas.height - ((entity.y - camera.y + 2) * BLOCK_SIZE);
+
+                // Vérifier si l'entité est visible
+                const dx = entity.x - player.x;
+                const dy = entity.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance <= VISION_RADIUS) {
+                    // Animer l'entité
+                    if (entity.animFrame !== undefined) {
+                        entity.animFrame += entity.animSpeed || 0.05;
+                        if (entity.animFrame >= 16) entity.animFrame = 0;
+                    }
+
+                    // Dessiner le bélier avec sprite animé
+                    if ((entity.type === 'black_ram' || entity.type === 'golden_ram') && sprites.blackRam && sprites.blackRam.complete) {
+                        // Sprite sheet 4x4 (16 frames) - 1068x1100
+                        const frameWidth = 1068 / 4;   // 267px
+                        const frameHeight = 1100 / 4;  // 275px
+
+                        const frame = Math.floor(entity.animFrame);
+                        const col = Math.floor(frame / 4);
+                        const row = frame % 4;
+
+                        const sx = col * frameWidth;
+                        const sy = row * frameHeight;
+
+                        // Taille: 2 blocs de large, 1 bloc de haut
+                        const displayWidth = BLOCK_SIZE * 2;
+                        const displayHeight = BLOCK_SIZE * 1;
+
+                        // Positionné sur 2 blocs (à partir de la position de l'entité)
+                        const drawX = ex - displayWidth / 2 + BLOCK_SIZE / 2;
+                        const drawY = canvas.height - ((entity.y - camera.y + 1) * BLOCK_SIZE);
+
+                        ctx.save();
+                        ctx.drawImage(
+                            sprites.blackRam,
+                            sx, sy, frameWidth, frameHeight,
+                            drawX, drawY,
+                            displayWidth, displayHeight
+                        );
+
+                        // Si c'est un bélier converti, ajouter une teinte orange
+                        if (entity.type === 'golden_ram' && entity.convertedByPlayer) {
+                            ctx.globalCompositeOperation = 'multiply';
+                            ctx.fillStyle = 'rgba(255, 107, 0, 0.4)';  // Orange
+                            ctx.fillRect(drawX, drawY, displayWidth, displayHeight);
+                            ctx.globalCompositeOperation = 'source-over';
+
+                            // Ajouter une lueur orange
+                            const gradient = ctx.createRadialGradient(
+                                drawX + displayWidth / 2, drawY + displayHeight / 2, 0,
+                                drawX + displayWidth / 2, drawY + displayHeight / 2, BLOCK_SIZE * 2
+                            );
+                            gradient.addColorStop(0, 'rgba(255, 107, 0, 0.3)');  // Orange
+                            gradient.addColorStop(1, 'rgba(255, 107, 0, 0)');
+                            ctx.fillStyle = gradient;
+                            ctx.fillRect(drawX - BLOCK_SIZE, drawY - BLOCK_SIZE, displayWidth + BLOCK_SIZE * 2, displayHeight + BLOCK_SIZE * 2);
+                        }
+                        ctx.restore();
+
+                        // Dessiner les barres de santé et de loyauté pour tous les béliers
+                        if (entity.health !== undefined || entity.loyalty !== undefined) {
+                            drawCreatureBars(
+                                drawX + displayWidth / 2,
+                                drawY - 20,
+                                entity.health,
+                                entity.maxHealth,
+                                entity.loyalty,
+                                entity.maxLoyalty,
+                                entity.alignment,
+                                entity.convertedByPlayer
+                            );
+                        }
+                    } else if (entity.type === 'ratman') {
+                        // Dessiner l'homme-rat avec sprites animés
+                        let currentSprite = null;
+                        let spriteWidth = 1276;  // idle dimensions
+                        let spriteHeight = 1100;
+
+                        // Choisir le sprite selon l'état
+                        if (entity.isAttacking) {
+                            if (entity.facing === 'left' && sprites.ratmanAttackLeft && sprites.ratmanAttackLeft.complete) {
+                                currentSprite = sprites.ratmanAttackLeft;
+                                spriteWidth = 1330;
+                                spriteHeight = 1100;
+                            } else if (entity.facing === 'right' && sprites.ratmanAttackRight && sprites.ratmanAttackRight.complete) {
+                                currentSprite = sprites.ratmanAttackRight;
+                                spriteWidth = 1350;
+                                spriteHeight = 1100;
+                            }
+                        } else if (entity.isMoving) {
+                            if (entity.facing === 'left' && sprites.ratmanWalkLeft && sprites.ratmanWalkLeft.complete) {
+                                currentSprite = sprites.ratmanWalkLeft;
+                                spriteWidth = 1332;
+                                spriteHeight = 1100;
+                            } else if (entity.facing === 'right' && sprites.ratmanWalkRight && sprites.ratmanWalkRight.complete) {
+                                currentSprite = sprites.ratmanWalkRight;
+                                spriteWidth = 1407;
+                                spriteHeight = 1100;
+                            }
+                        } else {
+                            if (sprites.ratmanIdle && sprites.ratmanIdle.complete) {
+                                currentSprite = sprites.ratmanIdle;
+                                spriteWidth = 1276;
+                                spriteHeight = 1100;
+                            }
+                        }
+
+                        if (currentSprite) {
+                            // Sprite sheet 4x4 (16 frames)
+                            const frameWidth = spriteWidth / 4;
+                            const frameHeight = spriteHeight / 4;
+
+                            const frame = Math.floor(entity.animFrame);
+                            const col = Math.floor(frame / 4);
+                            const row = frame % 4;
+
+                            const sx = col * frameWidth;
+                            const sy = row * frameHeight;
+
+                            // Taille: 2 blocs de haut
+                            const displayHeight = BLOCK_SIZE * 2;
+                            const scale = displayHeight / frameHeight;
+                            const displayWidth = frameWidth * scale;
+
+                            const drawX = ex - displayWidth / 2 + BLOCK_SIZE / 2;
+                            const drawY = canvas.height - ((entity.y - camera.y + 2) * BLOCK_SIZE) - displayHeight + BLOCK_SIZE * 2;
+
+                            ctx.save();
+
+                            // Effet de teinte selon l'alignement
+                            if (entity.alignment === 'light' && entity.convertedByPlayer) {
+                                // Teinte orange pour les alliés convertis
+                                ctx.globalCompositeOperation = 'source-over';
+                                ctx.drawImage(
+                                    currentSprite,
+                                    sx, sy, frameWidth, frameHeight,
+                                    drawX, drawY,
+                                    displayWidth, displayHeight
+                                );
+                                ctx.globalCompositeOperation = 'multiply';
+                                ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+                                ctx.fillRect(drawX, drawY, displayWidth, displayHeight);
+                                ctx.globalCompositeOperation = 'source-over';
+                            } else {
+                                // Normal pour les monstres de l'ombre
+                                ctx.drawImage(
+                                    currentSprite,
+                                    sx, sy, frameWidth, frameHeight,
+                                    drawX, drawY,
+                                    displayWidth, displayHeight
+                                );
+                            }
+
+                            // Effet visuel de conversion
+                            if (entity.conversionEffect) {
+                                const alpha = entity.conversionEffect.timer / 60;
+                                const color = entity.conversionEffect.type === 'convertToLight'
+                                    ? `rgba(255, 215, 0, ${alpha * 0.5})`
+                                    : `rgba(75, 0, 130, ${alpha * 0.5})`;
+
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 3;
+                                ctx.strokeRect(drawX, drawY, displayWidth, displayHeight);
+
+                                // Particules
+                                for (let p = 0; p < 3; p++) {
+                                    const angle = (entity.conversionEffect.timer + p * 120) * 0.05;
+                                    const radius = 30;
+                                    const px = drawX + displayWidth / 2 + Math.cos(angle) * radius;
+                                    const py = drawY + displayHeight / 2 + Math.sin(angle) * radius;
+
+                                    ctx.fillStyle = color;
+                                    ctx.beginPath();
+                                    ctx.arc(px, py, 3, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+                            }
+
+                            ctx.restore();
+
+                            // Dessiner les barres de santé et de loyauté pour les ratmen
+                            if (entity.health !== undefined || entity.loyalty !== undefined) {
+                                drawCreatureBars(
+                                    drawX + displayWidth / 2,
+                                    drawY - 20,
+                                    entity.health,
+                                    entity.maxHealth,
+                                    entity.loyalty,
+                                    entity.maxLoyalty,
+                                    entity.alignment,
+                                    entity.convertedByPlayer
+                                );
+                            }
+                        } else {
+                            // Fallback
+                            ctx.fillStyle = entity.color;
+                            ctx.beginPath();
+                            ctx.arc(ex + BLOCK_SIZE / 2, ey + BLOCK_SIZE, BLOCK_SIZE, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    } else {
+                        // Fallback: dessiner un placeholder coloré
+                        ctx.fillStyle = entity.color;
+                        ctx.beginPath();
+                        ctx.arc(ex + BLOCK_SIZE / 2, ey + BLOCK_SIZE, BLOCK_SIZE / 2, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Indicateur du type
+                        ctx.fillStyle = 'white';
+                        ctx.font = '12px monospace';
+                        ctx.textAlign = 'center';
+                        const label = entity.type === 'light_guardian' ? '👼' : '🐏';
+                        ctx.fillText(label, ex + BLOCK_SIZE / 2, ey + BLOCK_SIZE + 4);
+                    }
+                }
+            }
         }
 
         // Dessiner le joueur avec sprites (grille 4×4)
@@ -593,16 +1452,710 @@
             document.getElementById('minedCount').textContent = minedCount;
             document.getElementById('position').textContent =
                 `${Math.floor(player.x)}, ${Math.floor(player.y)}`;
-            document.getElementById('playerHeight').textContent = player.height;
+
+            // Calculer la profondeur depuis la surface (niveau 255)
+            const depthFromSurface = GRID_HEIGHT - Math.floor(player.y);
+            document.getElementById('depth').textContent = depthFromSurface;
+
             document.getElementById('playerState').textContent = player.isCrouching ? 'Accroupi 🟡' : 'Debout 🟢';
+
+            // Afficher le mana
+            document.getElementById('mana').textContent = Math.floor(player.mana);
+
+            // Afficher la santé
+            if (document.getElementById('health')) {
+                document.getElementById('health').textContent = Math.floor(player.health);
+            }
+
+            // Afficher l'indicateur de repos
+            if (document.getElementById('restIndicator')) {
+                const isResting = !player.isMoving && player.attackCooldown === 0 && !isInvoking && player.onGround;
+                if (isResting && player.restTimer >= 120) {
+                    document.getElementById('restIndicator').textContent = '😴 (régénération)';
+                } else if (isResting && player.restTimer > 0) {
+                    const secondsLeft = Math.ceil((120 - player.restTimer) / 60);
+                    document.getElementById('restIndicator').textContent = `⏳ (${secondsLeft}s)`;
+                } else {
+                    document.getElementById('restIndicator').textContent = '';
+                }
+            }
+
+            // Afficher les alliés
+            document.getElementById('allies').textContent = player.currentAllies;
+            document.getElementById('maxAllies').textContent = player.maxAllies;
         }
+
+        // Lancer un sort de conversion (coûte 100% du mana)
+        function castConversionSpell(spellType) {
+            const spell = player.spells[spellType];
+
+            // Vérifier que le joueur a 100% de mana
+            if (player.mana < player.maxMana) {
+                console.log(`❌ ${spell.name}: Mana insuffisant (${Math.floor(player.mana)}/${player.maxMana}) - Nécessite 100%`);
+                return;
+            }
+
+            // Chercher une cible à portée (monstre OU bélier noir)
+            let targetEntity = null;
+            let minDistance = spell.range;
+
+            for (const entity of entities) {
+                if (entity.type === 'ratman' || entity.type === 'black_ram') {
+                    const dx = entity.x - player.x;
+                    const dy = entity.y - player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance <= spell.range && distance < minDistance) {
+                        targetEntity = entity;
+                        minDistance = distance;
+                    }
+                }
+            }
+
+            if (!targetEntity) {
+                console.log(`❌ ${spell.name}: Aucune cible à portée`);
+                return;
+            }
+
+            // Appliquer la conversion - coûte 100% du mana
+            player.mana = 0;
+
+            if (spellType === 'convertToLight') {
+                // Conversion par le joueur
+                if (targetEntity.type === 'black_ram') {
+                    // Convertir le bélier noir
+                    targetEntity.alignment = 'light';
+                    targetEntity.color = '#FF6B00';  // Orange (converti par le joueur)
+                    targetEntity.type = 'golden_ram';  // Changer le type
+                    targetEntity.convertedByPlayer = true;  // Marquer comme converti
+                    targetEntity.loyalty = 0.01;  // Repartir de presque 0 pour la remontée
+
+                    // Augmenter la limite d'alliés du joueur
+                    player.maxAllies++;
+
+                    // Convertir tous les marqueurs de cette cave en marqueurs de Lumière
+                    convertCaveTerritory(targetEntity.x, targetEntity.y, TERRITORY_TYPES.SHADOW, TERRITORY_TYPES.LIGHT);
+
+                    console.log(`🐏✨ Bélier converti! +1 allié max (${player.currentAllies}/${player.maxAllies})`);
+                } else if (targetEntity.type === 'ratman') {
+                    // Convertir un monstre en allié
+                    // Vérifier si on a de la place pour un allié
+                    if (player.currentAllies >= player.maxAllies) {
+                        console.log(`❌ Limite d'alliés atteinte (${player.currentAllies}/${player.maxAllies}) - Convertissez d'abord un bélier!`);
+                        player.mana = player.maxMana;  // Rendre le mana car échec
+                        return;
+                    }
+
+                    targetEntity.alignment = 'light';
+                    targetEntity.color = '#FF6B00';  // Orange (converti par le joueur)
+                    targetEntity.convertedByPlayer = true;  // Marquer comme converti
+                    targetEntity.loyalty = 0.01;  // Repartir de presque 0 pour la remontée
+                    player.currentAllies++;
+
+                    // Libérer le slot du bélier pour qu'il puisse invoquer un nouveau monstre
+                    // ET réduire sa loyauté
+                    if (targetEntity.summonedBy) {
+                        targetEntity.summonedBy.currentSummons--;
+
+                        // Réduire la loyauté du bélier qui a invoqué ce monstre
+                        const summoner = targetEntity.summonedBy;
+                        summoner.loyalty = Math.max(0, summoner.loyalty - 15);
+
+                        // Si la loyauté tombe à 0, conversion automatique
+                        if (summoner.loyalty <= 0 && summoner.type === 'black_ram') {
+                            summoner.type = 'golden_ram';
+                            summoner.alignment = 'light';
+                            summoner.color = '#FF6B00';  // Orange (converti par le joueur)
+                            summoner.convertedByPlayer = true;  // Marquer comme converti
+                            summoner.loyalty = 0.01;  // Repartir de presque 0 pour la remontée
+                            player.maxAllies++;
+                            convertCaveTerritory(summoner.x, summoner.y, TERRITORY_TYPES.SHADOW, TERRITORY_TYPES.LIGHT);
+                            console.log(`✨ Le bélier a perdu toute loyauté et a été converti! +1 allié max`);
+                        }
+                    }
+                    console.log(`✨ Monstre converti! (${player.currentAllies}/${player.maxAllies} alliés)`);
+                }
+            } else if (spellType === 'convertToShadow') {
+                // Conversion à l'Ombre
+                if (targetEntity.type === 'ratman' && targetEntity.alignment === 'light') {
+                    // Décrémenter le compteur d'alliés
+                    player.currentAllies--;
+                }
+
+                targetEntity.alignment = 'shadow';
+                targetEntity.color = '#4B0082';  // Indigo
+                console.log(`🌑 Cible convertie à l'Ombre! (${player.currentAllies}/${player.maxAllies} alliés)`);
+            }
+
+            // Effet visuel de conversion
+            createConversionEffect(targetEntity, spellType);
+        }
+
+        // Convertir le territoire d'une cave (changer les marqueurs)
+        function convertCaveTerritory(centerX, centerY, fromType, toType) {
+            // Trouver tous les marqueurs proches du centre (même cave)
+            const maxDistance = 30;  // Distance max pour considérer qu'on est dans la même cave
+
+            const newMarker = toType === TERRITORY_TYPES.LIGHT ? '🌟' : '🌑';
+            const newStoneType = toType === TERRITORY_TYPES.LIGHT ? BLOCKS.STONE_LIGHT : BLOCKS.STONE_SHADOW;
+
+            let convertedCount = 0;
+
+            for (const marker of caveMarkers) {
+                if (marker.type === fromType) {
+                    const dx = marker.x - centerX;
+                    const dy = marker.y - centerY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance <= maxDistance) {
+                        marker.symbol = newMarker;
+                        marker.type = toType;
+
+                        // Changer aussi le type de pierre
+                        if (world[marker.y][marker.x] === BLOCKS.STONE_SHADOW || world[marker.y][marker.x] === BLOCKS.STONE_LIGHT) {
+                            world[marker.y][marker.x] = newStoneType;
+                        }
+
+                        convertedCount++;
+                    }
+                }
+            }
+
+            console.log(`🔄 ${convertedCount} marqueurs convertis en territoire de ${toType === TERRITORY_TYPES.LIGHT ? 'Lumière' : 'Ombre'}`);
+        }
+
+        // Créer un effet visuel de conversion
+        function createConversionEffect(entity, spellType) {
+            entity.conversionEffect = {
+                timer: 60,  // Durée de l'effet: 1 seconde
+                type: spellType
+            };
+        }
+
+        // Mettre à jour les entités (invocations, IA, etc.)
+        function updateEntities() {
+            // Processus d'invocation continue
+            processContinuousInvoke();
+
+            // Gestion du cooldown d'attaque du joueur
+            if (player.attackCooldown > 0) {
+                player.attackCooldown--;
+                if (player.attackCooldown === 0) {
+                    player.isAttacking = false;
+                }
+            }
+
+            // Vérifier si le joueur est mort
+            if (player.health <= 0) {
+                console.log('💀 Vous êtes mort! Rechargez la page pour recommencer.');
+                // Arrêter le jeu
+                cancelAnimationFrame(gameLoopId);
+                // Afficher un message
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'red';
+                ctx.font = '48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial';
+                ctx.fillText('Appuyez sur R pour recommencer', canvas.width / 2, canvas.height / 2 + 50);
+                return;
+            }
+
+            // Faire remonter la loyauté des créatures converties par le joueur
+            for (const entity of entities) {
+                if (entity.convertedByPlayer && entity.loyalty < entity.maxLoyalty) {
+                    // Remonter progressivement: 10 par seconde = 10/60 par frame
+                    const loyaltyGainPerFrame = 10 / 60;
+                    entity.loyalty = Math.min(entity.maxLoyalty, entity.loyalty + loyaltyGainPerFrame);
+                }
+            }
+
+            // Régénération du mana du joueur (seulement si pas en train d'invoquer)
+            if (player.mana < player.maxMana && !isInvoking) {
+                player.mana = Math.min(player.maxMana, player.mana + player.manaRegen);
+            }
+
+            // Système de repos pour régénération de vie
+            const isResting = !player.isMoving && player.attackCooldown === 0 && !isInvoking && player.onGround;
+
+            if (isResting) {
+                // Incrémenter le timer de repos
+                player.restTimer++;
+
+                // Après 2 secondes (120 frames) de repos, commencer la régénération
+                if (player.restTimer >= 120 && player.health < player.maxHealth) {
+                    player.health = Math.min(player.maxHealth, player.health + player.healthRegen);
+                }
+            } else {
+                // Réinitialiser le timer si le joueur bouge/attaque
+                player.restTimer = 0;
+            }
+
+            // Mettre à jour les cooldowns des escaliers
+            for (const stairway of stairwayLocations) {
+                if (stairway.invokeCooldown > 0) {
+                    stairway.invokeCooldown--;
+                }
+            }
+
+            for (let i = 0; i < entities.length; i++) {
+                const entity = entities[i];
+
+                // Mettre à jour le cooldown d'invocation des béliers
+                if (entity.invokeCooldown > 0) {
+                    entity.invokeCooldown--;
+                }
+
+                // Effet de conversion
+                if (entity.conversionEffect) {
+                    entity.conversionEffect.timer--;
+                    if (entity.conversionEffect.timer <= 0) {
+                        delete entity.conversionEffect;
+                    }
+                }
+
+                // Comportement du bélier noir: invoquer des monstres (mais pas les béliers dorés)
+                if (entity.type === 'black_ram') {
+                    entity.summonTimer++;
+
+                    // Vérifier la distance avec le joueur
+                    const dx = entity.x - player.x;
+                    const dy = entity.y - player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    // Si le joueur est proche (dans un rayon de 10 blocs) et il est temps d'invoquer
+                    if (distance <= 10 && entity.summonTimer >= entity.summonInterval && entity.currentSummons < entity.maxSummons) {
+                        summonMonster(entity);
+                        entity.summonTimer = 0;
+                        entity.currentSummons++;
+
+                        // Réduire la loyauté du bélier quand il invoque
+                        entity.loyalty = Math.max(0, entity.loyalty - 5);
+
+                        // Si la loyauté tombe à 0, conversion automatique
+                        if (entity.loyalty <= 0) {
+                            entity.type = 'golden_ram';
+                            entity.alignment = 'light';
+                            entity.color = '#FF6B00';  // Orange (converti par le joueur)
+                            entity.convertedByPlayer = true;  // Marquer comme converti
+                            entity.loyalty = 0.01;  // Repartir de presque 0 pour la remontée
+                            player.maxAllies++;
+                            convertCaveTerritory(entity.x, entity.y, TERRITORY_TYPES.SHADOW, TERRITORY_TYPES.LIGHT);
+                            console.log(`✨ Le bélier s'est épuisé et a été converti! +1 allié max`);
+                        }
+                    }
+                } else if (entity.type === 'golden_ram' && entity.convertedByPlayer) {
+                    // Bélier converti: invoque des ratmen alliés comme le font les rams noirs
+                    entity.summonTimer++;
+
+                    // Vérifier la distance avec le joueur OU un ennemi proche
+                    const dx = entity.x - player.x;
+                    const dy = entity.y - player.y;
+                    const distanceToPlayer = Math.sqrt(dx * dx + dy * dy);
+
+                    // Chercher des ennemis proches
+                    let hasEnemyNearby = false;
+                    for (const other of entities) {
+                        if ((other.type === 'black_ram' || (other.type === 'ratman' && other.alignment === 'shadow')) && other !== entity) {
+                            const dx = other.x - entity.x;
+                            const dy = other.y - entity.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist <= 10) {
+                                hasEnemyNearby = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Si joueur proche OU ennemi proche, et c'est le moment d'invoquer
+                    if ((distanceToPlayer <= 10 || hasEnemyNearby) && entity.summonTimer >= entity.summonInterval && entity.currentSummons < entity.maxSummons) {
+                        summonMonster(entity);
+                        entity.summonTimer = 0;
+                    }
+                }
+
+                // Comportement des hommes-rats invoqués
+                if (entity.type === 'ratman') {
+                    // Initialiser l'alignement si non défini
+                    if (!entity.alignment) {
+                        entity.alignment = 'shadow';  // Par défaut: ombre
+                    }
+
+                    // Déterminer la cible selon l'alignement
+                    let target = null;
+                    if (entity.alignment === 'shadow') {
+                        // Les monstres de l'ombre attaquent le joueur
+                        target = player;
+                    } else if (entity.alignment === 'light' && entity.convertedByPlayer) {
+                        // Les monstres convertis par le joueur: défendent le joueur
+                        // 1. Chercher un ennemi proche du joueur
+                        let closestEnemy = null;
+                        let minDist = Infinity;
+                        const defenseRange = 5;  // Portée de défense
+
+                        for (const other of entities) {
+                            // Cibler les créatures shadow hostiles
+                            if ((other.type === 'black_ram' || (other.type === 'ratman' && other.alignment === 'shadow')) && other !== entity) {
+                                const dxToPlayer = other.x - player.x;
+                                const dyToPlayer = other.y - player.y;
+                                const distToPlayer = Math.sqrt(dxToPlayer * dxToPlayer + dyToPlayer * dyToPlayer);
+
+                                // Si l'ennemi est proche du joueur
+                                if (distToPlayer < defenseRange) {
+                                    const dx = other.x - entity.x;
+                                    const dy = other.y - entity.y;
+                                    const dist = Math.sqrt(dx * dx + dy * dy);
+                                    if (dist < minDist) {
+                                        minDist = dist;
+                                        closestEnemy = other;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Si un ennemi est proche, l'attaquer, sinon suivre le joueur
+                        target = closestEnemy || player;
+                    } else if (entity.alignment === 'light') {
+                        // Les monstres de la lumière naturels attaquent les béliers noirs
+                        let closestRam = null;
+                        let minDist = Infinity;
+                        for (const other of entities) {
+                            if (other.type === 'black_ram') {
+                                const dx = other.x - entity.x;
+                                const dy = other.y - entity.y;
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    closestRam = other;
+                                }
+                            }
+                        }
+                        target = closestRam || player;  // Fallback sur le joueur
+                    }
+
+                    if (target) {
+                        // IA: se déplacer vers la cible
+                        const dx = target.x - entity.x;
+                        const dy = target.y - entity.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        // Déterminer la direction
+                        if (dx > 0) {
+                            entity.facing = 'right';
+                        } else if (dx < 0) {
+                            entity.facing = 'left';
+                        }
+
+                        // Comportement selon la cible
+                        const isFollowingPlayer = (target === player && entity.convertedByPlayer);
+                        const followDistance = isFollowingPlayer ? 2.0 : 0.5;  // Distance de garde pour les alliés
+                        const attackDistance = 1.5;
+
+                        // Si proche de l'ennemi: attaquer
+                        if (!isFollowingPlayer && distance < attackDistance && entity.attackCooldown <= 0) {
+                            entity.isAttacking = true;
+                            entity.isMoving = false;
+                            entity.attackCooldown = 120;  // 2 secondes de cooldown
+                            entity.animFrame = 0;  // Redémarrer l'animation d'attaque
+
+                            // Infliger des dégâts à la cible
+                            const damage = 5;  // Dégâts par attaque (réduit pour meilleur équilibre)
+                            if (target === player) {
+                                // Attaquer le joueur
+                                if (player.health !== undefined) {
+                                    player.health = Math.max(0, player.health - damage);
+                                    console.log(`💥 Le ratman vous attaque! ${player.health}/${player.maxHealth} HP`);
+                                }
+                            } else if (target.health !== undefined) {
+                                // Attaquer une créature
+                                target.health = Math.max(0, target.health - damage);
+                                console.log(`💥 Attaque! Cible: ${target.health}/${target.maxHealth} HP`);
+                            }
+                        } else if (distance > followDistance) {
+                            // Si trop loin: poursuivre
+                            entity.isAttacking = false;
+                            entity.isMoving = true;
+                            const speed = 0.03;
+                            entity.vx = (dx / distance) * speed;
+                            entity.vy = (dy / distance) * speed;
+                            entity.x += entity.vx;
+                            entity.y += entity.vy;
+                        } else {
+                            // À bonne distance: rester en position
+                            entity.isMoving = false;
+                        }
+                    }
+
+                    // Cooldown d'attaque
+                    if (entity.attackCooldown > 0) {
+                        entity.attackCooldown--;
+                        if (entity.attackCooldown === 0) {
+                            entity.isAttacking = false;
+                        }
+                    }
+
+                    // Animation
+                    entity.animFrame += entity.animSpeed;
+                    if (entity.animFrame >= 16) entity.animFrame = 0;
+
+                    // Vérifier la santé de l'entité
+                    if (entity.health !== undefined && entity.health <= 0) {
+                        // L'entité est morte
+                        entities.splice(i, 1);
+                        i--;
+                        if (entity.summonedBy) {
+                            entity.summonedBy.currentSummons--;
+                        }
+                        // Si c'est un ram converti, réduire maxAllies
+                        if (entity.type === 'golden_ram' && entity.convertedByPlayer) {
+                            player.maxAllies = Math.max(1, player.maxAllies - 1);
+                            console.log(`☠️ Un bélier converti est mort. -1 allié max (${player.maxAllies})`);
+                        }
+                        // Si c'est un ratman allié, réduire currentAllies
+                        if (entity.type === 'ratman' && entity.convertedByPlayer) {
+                            player.currentAllies = Math.max(0, player.currentAllies - 1);
+                            console.log(`☠️ Un ratman allié est mort. (${player.currentAllies}/${player.maxAllies} alliés)`);
+                        }
+                        continue;  // Passer à l'entité suivante
+                    }
+
+                    // Durée de vie (sauf si converti à la Lumière)
+                    if (entity.alignment !== 'light') {
+                        entity.lifetime--;
+                        if (entity.lifetime <= 0) {
+                            // Marquer pour suppression
+                            entities.splice(i, 1);
+                            i--;
+                            if (entity.summonedBy) {
+                                entity.summonedBy.currentSummons--;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // État de l'invocation continue
+        let isInvoking = false;
+        let currentInvokeTarget = null;
+
+        // Trouver la créature la plus proche pour l'invocation
+        function findClosestInvokableTarget() {
+            const invokeRange = 3;  // Portée d'invocation: 3 blocs
+            let target = null;
+            let minDistance = invokeRange;
+            let targetType = null;
+
+            // Vérifier les béliers (seulement ceux non convertis)
+            for (const entity of entities) {
+                if ((entity.type === 'black_ram' || entity.type === 'golden_ram') && !entity.convertedByPlayer) {
+                    const dx = entity.x - player.x;
+                    const dy = entity.y - player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance <= invokeRange && distance < minDistance) {
+                        target = entity;
+                        minDistance = distance;
+                        targetType = 'ram';
+                    }
+                }
+            }
+
+            // Vérifier les monstres ratman (seulement ceux non convertis)
+            for (const entity of entities) {
+                if (entity.type === 'ratman' && !entity.convertedByPlayer) {
+                    const dx = entity.x - player.x;
+                    const dy = entity.y - player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance <= invokeRange && distance < minDistance) {
+                        target = entity;
+                        minDistance = distance;
+                        targetType = 'ratman';
+                    }
+                }
+            }
+
+            // Vérifier les escaliers (seulement ceux non convertis)
+            for (const stairway of stairwayLocations) {
+                if (stairway.converted) continue;  // Ignorer les escaliers déjà convertis
+
+                const dx = stairway.x - player.x;
+                const dy = stairway.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance <= invokeRange && distance < minDistance) {
+                    target = stairway;
+                    minDistance = distance;
+                    targetType = 'stairway';
+                }
+            }
+
+            return { target, targetType };
+        }
+
+        // Processus d'invocation continue (appelé chaque frame)
+        function processContinuousInvoke() {
+            if (!isInvoking) return;
+
+            // Drain de mana: 5 par seconde = 5/60 par frame (à 60 fps)
+            const manaDrainPerFrame = 5 / 60;
+
+            // Vérifier si le joueur a encore du mana
+            if (player.mana <= 0) {
+                isInvoking = false;
+                currentInvokeTarget = null;
+                return;
+            }
+
+            // Trouver la cible la plus proche
+            const { target, targetType } = findClosestInvokableTarget();
+
+            if (!target) {
+                // Pas de cible à portée, arrêter l'invocation
+                currentInvokeTarget = null;
+                return;
+            }
+
+            // Mettre à jour la cible actuelle
+            currentInvokeTarget = target;
+
+            // Consommer le mana du joueur
+            player.mana = Math.max(0, player.mana - manaDrainPerFrame);
+
+            // Réduire la loyauté de la cible: même taux que le mana (5/60 par frame)
+            const loyaltyDrainPerFrame = 5 / 60;
+
+            if (target.loyalty !== undefined) {
+                target.loyalty = Math.max(0, target.loyalty - loyaltyDrainPerFrame);
+
+                // Vérifier si la loyauté est tombée à 0 pour conversion
+                if (target.loyalty <= 0) {
+                    if (targetType === 'ram' && target.type === 'black_ram') {
+                        // Conversion du bélier noir
+                        target.type = 'golden_ram';
+                        target.alignment = 'light';
+                        target.color = '#FF6B00';  // Orange (converti par le joueur)
+                        target.convertedByPlayer = true;  // Marquer comme converti
+                        target.loyalty = 0.01;  // Repartir de presque 0 pour la remontée
+                        player.maxAllies++;
+                        convertCaveTerritory(target.x, target.y, TERRITORY_TYPES.SHADOW, TERRITORY_TYPES.LIGHT);
+                        console.log(`✨ Le bélier noir a été converti par invocation! +1 allié max`);
+                        isInvoking = false;
+                        currentInvokeTarget = null;
+                    } else if (targetType === 'ratman' && target.alignment === 'shadow') {
+                        // Conversion du ratman
+                        if (player.currentAllies < player.maxAllies) {
+                            target.alignment = 'light';
+                            target.color = '#FF6B00';  // Orange (converti par le joueur)
+                            target.convertedByPlayer = true;  // Marquer comme converti
+                            target.loyalty = 0.01;  // Repartir de presque 0 pour la remontée
+                            player.currentAllies++;
+
+                            // Libérer le slot du bélier et réduire sa loyauté
+                            if (target.summonedBy) {
+                                target.summonedBy.currentSummons--;
+
+                                const summoner = target.summonedBy;
+                                summoner.loyalty = Math.max(0, summoner.loyalty - 15);
+
+                                // Si la loyauté du bélier tombe à 0
+                                if (summoner.loyalty <= 0 && summoner.type === 'black_ram') {
+                                    summoner.type = 'golden_ram';
+                                    summoner.alignment = 'light';
+                                    summoner.color = '#FF6B00';  // Orange (converti par le joueur)
+                                    summoner.convertedByPlayer = true;  // Marquer comme converti
+                                    summoner.loyalty = 0.01;  // Repartir de presque 0 pour la remontée
+                                    player.maxAllies++;
+                                    convertCaveTerritory(summoner.x, summoner.y, TERRITORY_TYPES.SHADOW, TERRITORY_TYPES.LIGHT);
+                                    console.log(`✨ Le bélier a perdu toute loyauté et a été converti! +1 allié max`);
+                                }
+                            }
+
+                            console.log(`✨ Monstre converti à la Lumière! (${player.currentAllies}/${player.maxAllies} alliés)`);
+                        }
+                        isInvoking = false;
+                        currentInvokeTarget = null;
+                    } else if (targetType === 'stairway') {
+                        // Bénédiction de l'escalier
+                        console.log(`✨ L'escalier vous a accordé sa bénédiction! +1 allié max`);
+                        player.mana = player.maxMana;
+                        player.maxAllies++;
+                        target.converted = true;  // Marquer comme converti
+                        isInvoking = false;
+                        currentInvokeTarget = null;
+                    }
+                }
+            }
+        }
+
+        // Ancienne fonction invokeNearby (conservée pour compatibilité mais non utilisée)
+        function invokeNearby() {
+            // Cette fonction n'est plus utilisée avec le système continu
+        }
+
+        // Invoquer un monstre
+        function summonMonster(summoner) {
+            // Créer un homme-rat près du bélier
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 2 + Math.random() * 2;  // Entre 2 et 4 blocs de distance
+
+            // Déterminer si c'est un allié ou un ennemi selon le summoner
+            const isAlly = summoner.convertedByPlayer === true;
+
+            // Pour les alliés, vérifier qu'on a de la place
+            if (isAlly && player.currentAllies >= player.maxAllies) {
+                console.log(`❌ Invocation annulée: limite d'alliés atteinte (${player.currentAllies}/${player.maxAllies})`);
+                return;
+            }
+
+            const monster = {
+                type: 'ratman',
+                x: summoner.x + Math.cos(angle) * distance,
+                y: summoner.y + Math.sin(angle) * distance,
+                vx: 0,
+                vy: 0,
+                color: isAlly ? '#FF6B00' : '#8B008B',  // Orange si allié, violet foncé si ennemi
+                animFrame: 0,
+                animSpeed: 0.05,
+                summonedBy: summoner,  // Référence au bélier qui l'a invoqué
+                lifetime: isAlly ? Infinity : 1800,  // Infini si allié, 30 secondes si ennemi
+                facing: 'right',  // Direction
+                isMoving: false,
+                isAttacking: false,
+                attackCooldown: 0,
+                health: 50,        // Points de vie du rat
+                maxHealth: 50,
+                loyalty: 100,      // Loyauté du rat
+                maxLoyalty: 100,
+                alignment: isAlly ? 'light' : 'shadow',  // Alignement selon le summoner
+                convertedByPlayer: isAlly  // Marquer si c'est un allié du joueur
+            };
+
+            // Si c'est un allié, incrémenter le compteur d'alliés
+            if (isAlly) {
+                player.currentAllies++;
+                console.log(`🐀✨ Ratman allié invoqué! (${player.currentAllies}/${player.maxAllies} alliés)`);
+            } else {
+                console.log(`🐀 Homme-rat ennemi invoqué en (${Math.floor(monster.x)}, ${Math.floor(monster.y)})`);
+            }
+
+            summoner.currentSummons++;
+            entities.push(monster);
+        }
+
+        // ID de la boucle de jeu pour pouvoir l'arrêter
+        let gameLoopId = null;
 
         // Boucle de jeu
         function gameLoop() {
             updatePhysics();
+            updateEntities();
             drawWorld();
             updateUI();
-            requestAnimationFrame(gameLoop);
+            gameLoopId = requestAnimationFrame(gameLoop);
         }
 
         // Contrôles
@@ -610,7 +2163,7 @@
         window.addEventListener('keydown', (e) => {
             keys[e.key.toLowerCase()] = true;
 
-            if ((e.key.toLowerCase() === 'z' || e.key.toLowerCase() === 'w' || e.key === ' ') && player.onGround) {
+            if ((e.key.toLowerCase() === 'z' || e.key.toLowerCase() === 'w') && player.onGround) {
                 player.vy = player.jumpPower;
                 player.onGround = false;
             }
@@ -623,11 +2176,64 @@
             }
 
             if (e.key.toLowerCase() === 'e') {
-                console.log('🔧 Touche E: Interaction');
+                isInvoking = true;
+            }
+
+            if (e.key === ' ') {
+                // Attaque avec la barre d'espace
+                if (player.attackCooldown <= 0) {
+                    player.isAttacking = true;
+                    player.attackCooldown = 60;  // 1 seconde de cooldown
+
+                    // Trouver et attaquer les ennemis à portée
+                    for (const entity of entities) {
+                        if ((entity.type === 'black_ram' || (entity.type === 'ratman' && entity.alignment === 'shadow')) && entity.health !== undefined) {
+                            const dx = entity.x - player.x;
+                            const dy = entity.y - player.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+
+                            if (distance <= player.attackRange) {
+                                entity.health = Math.max(0, entity.health - player.attackDamage);
+                                console.log(`⚔️ Vous attaquez! Cible: ${entity.health}/${entity.maxHealth} HP`);
+                            }
+                        }
+                    }
+                }
             }
 
             if (e.key.toLowerCase() === 'a') {
                 console.log('🔄 Touche A: Équipement précédent');
+            }
+
+            if (e.key.toLowerCase() === 'b') {
+                // Toggle mode caméra libre
+                camera.freeView = !camera.freeView;
+                if (camera.freeView) {
+                    // Initialiser la position de la caméra libre à la position actuelle
+                    camera.freeX = camera.x;
+                    camera.freeY = camera.y;
+                    document.getElementById('debugMode').style.display = 'block';
+                    console.log('📷 Mode caméra libre activé (ZQSD pour se déplacer)');
+                } else {
+                    document.getElementById('debugMode').style.display = 'none';
+                    console.log('📷 Mode caméra normale (suit le joueur)');
+                }
+            }
+
+            // Sorts de conversion
+            if (e.key.toLowerCase() === 'f') {
+                castConversionSpell('convertToLight');
+            }
+
+            if (e.key.toLowerCase() === 'g') {
+                castConversionSpell('convertToShadow');
+            }
+
+            if (e.key.toLowerCase() === 'r') {
+                // Recommencer le jeu
+                if (player.health <= 0) {
+                    location.reload();
+                }
             }
         });
 
@@ -641,6 +2247,11 @@
                     player.isCrouching = false;
                 }
                 // Sinon, rester accroupi (ne rien faire)
+            }
+
+            if (e.key.toLowerCase() === 'e') {
+                isInvoking = false;
+                currentInvokeTarget = null;
             }
         });
 
@@ -685,7 +2296,7 @@
 
         // Démarrer
         async function start() {
-            console.log('🎮 Oubliettes - Chargement...');
+            console.log('🧙 Oubliettes - Chargement...');
 
             await loadSprites();
 
@@ -699,7 +2310,7 @@
 
             gameLoop();
 
-            console.log('🎮 Oubliettes démarré !');
+            console.log('🧙 Oubliettes démarré !');
         }
 
         start();
