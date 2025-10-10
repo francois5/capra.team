@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oubliettes 2 - Vue Isométrique</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #f4a460;
+            font-size: 24px;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: #f4a460;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+            font-family: 'Courier New', monospace;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            color: #f4a460;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+        }
+
+        .controls h3 {
+            margin-bottom: 5px;
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Chargement des Oubliettes...</div>
+
+    <div id="gameContainer"></div>
+
+    <div class="debug-info" id="debugInfo">
+        <strong>Oubliettes 2 - Isométrique</strong><br>
+        Position: <span id="pos">0, 0</span>
+    </div>
+
+    <div class="controls">
+        <h3>Contrôles</h3>
+        <p>ZQSD / Flèches : Déplacement</p>
+        <p>+/- : Zoom</p>
+        <p>Espace : Action</p>
+    </div>
+
+    <!-- Phaser 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+
+    <!-- Scripts du jeu -->
+    <script src="js/utils/IsoUtils.js"></script>
+    <script src="js/world/WorldGenerator.js"></script>
+    <script src="js/entities/Player.js"></script>
+    <script src="js/scenes/BootScene.js"></script>
+    <script src="js/scenes/PreloadScene.js"></script>
+    <script src="js/scenes/GameScene.js"></script>
+    <script src="js/game.js"></script>
+
+    <script>
+        // Masquer le loading après démarrage
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loading = document.getElementById('loading');
+                if (loading) loading.style.display = 'none';
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
