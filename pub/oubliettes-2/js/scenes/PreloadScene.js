@@ -36,84 +36,83 @@ class PreloadScene extends Phaser.Scene {
     }
 
     createIsoTiles() {
-        // Tile isométrique de base (losange)
-        // Ratio 2:1 classique - 64x32
-        const tileWidth = 64;
-        const tileHeight = 32;
+        // Cube isométrique parfait (1m³)
+        // Ratio 2:1 pour l'isométrie
+        const tileWidth = 64;   // Largeur du losange
+        const tileHeight = 32;  // Hauteur du losange
+        const cubeHeight = 32;  // Hauteur du cube (même que tileHeight pour un cube parfait)
 
-        // Sol (tile plat)
+        // Sol (losange plat - vue du dessus d'un cube)
         const floorCanvas = document.createElement('canvas');
         floorCanvas.width = tileWidth;
         floorCanvas.height = tileHeight;
         const floorCtx = floorCanvas.getContext('2d');
 
+        // Dessiner le losange (face du haut)
         floorCtx.fillStyle = '#5a5a5a';
         floorCtx.beginPath();
-        floorCtx.moveTo(tileWidth / 2, 0);
-        floorCtx.lineTo(tileWidth, tileHeight / 2);
-        floorCtx.lineTo(tileWidth / 2, tileHeight);
-        floorCtx.lineTo(0, tileHeight / 2);
+        floorCtx.moveTo(tileWidth / 2, 0);           // Haut
+        floorCtx.lineTo(tileWidth, tileHeight / 2);  // Droite
+        floorCtx.lineTo(tileWidth / 2, tileHeight);  // Bas
+        floorCtx.lineTo(0, tileHeight / 2);          // Gauche
         floorCtx.closePath();
         floorCtx.fill();
 
-        // Contour
+        // Contour pour définition
         floorCtx.strokeStyle = '#3a3a3a';
         floorCtx.lineWidth = 1;
         floorCtx.stroke();
 
         this.textures.addCanvas('iso-floor', floorCanvas);
 
-        // Mur (cube iso avec face visible)
+        // Mur (cube isométrique parfait avec 3 faces visibles)
         const wallCanvas = document.createElement('canvas');
         wallCanvas.width = tileWidth;
-        wallCanvas.height = tileHeight + 32; // Hauteur du mur
+        wallCanvas.height = tileHeight + cubeHeight;
         const wallCtx = wallCanvas.getContext('2d');
 
-        // Face avant du cube
-        wallCtx.fillStyle = '#4a3828';
-        wallCtx.beginPath();
-        wallCtx.moveTo(tileWidth / 2, 0);
-        wallCtx.lineTo(tileWidth, tileHeight / 2);
-        wallCtx.lineTo(tileWidth, tileHeight / 2 + 32);
-        wallCtx.lineTo(tileWidth / 2, tileHeight + 32);
-        wallCtx.lineTo(0, tileHeight / 2 + 32);
-        wallCtx.lineTo(0, tileHeight / 2);
-        wallCtx.closePath();
-        wallCtx.fill();
-
-        // Face gauche (plus sombre)
+        // Face GAUCHE (côté ombre) - Parallélogramme
         wallCtx.fillStyle = '#3a2818';
+        wallCtx.strokeStyle = '#2a1808';
+        wallCtx.lineWidth = 1;
         wallCtx.beginPath();
-        wallCtx.moveTo(tileWidth / 2, 0);
-        wallCtx.lineTo(0, tileHeight / 2);
-        wallCtx.lineTo(0, tileHeight / 2 + 32);
-        wallCtx.lineTo(tileWidth / 2, tileHeight + 32);
+        wallCtx.moveTo(0, tileHeight / 2);               // Bas gauche
+        wallCtx.lineTo(0, tileHeight / 2 + cubeHeight);  // Haut gauche (sur l'écran = bas)
+        wallCtx.lineTo(tileWidth / 2, tileHeight + cubeHeight);  // Haut milieu
+        wallCtx.lineTo(tileWidth / 2, tileHeight);       // Bas milieu
         wallCtx.closePath();
         wallCtx.fill();
+        wallCtx.stroke();
 
-        // Face droite (encore plus sombre)
-        wallCtx.fillStyle = '#2a1808';
+        // Face DROITE (côté lumière) - Parallélogramme
+        wallCtx.fillStyle = '#5a4838';
+        wallCtx.strokeStyle = '#4a3828';
+        wallCtx.lineWidth = 1;
         wallCtx.beginPath();
-        wallCtx.moveTo(tileWidth / 2, 0);
-        wallCtx.lineTo(tileWidth, tileHeight / 2);
-        wallCtx.lineTo(tileWidth, tileHeight / 2 + 32);
-        wallCtx.lineTo(tileWidth / 2, tileHeight + 32);
+        wallCtx.moveTo(tileWidth / 2, tileHeight);           // Bas milieu
+        wallCtx.lineTo(tileWidth / 2, tileHeight + cubeHeight);  // Haut milieu
+        wallCtx.lineTo(tileWidth, tileHeight / 2 + cubeHeight);  // Haut droit
+        wallCtx.lineTo(tileWidth, tileHeight / 2);           // Bas droit
         wallCtx.closePath();
         wallCtx.fill();
+        wallCtx.stroke();
 
-        // Face du haut
+        // Face du HAUT - Losange (la plus claire)
         wallCtx.fillStyle = '#6a5848';
+        wallCtx.strokeStyle = '#5a4838';
+        wallCtx.lineWidth = 1;
         wallCtx.beginPath();
-        wallCtx.moveTo(tileWidth / 2, 0);
-        wallCtx.lineTo(tileWidth, tileHeight / 2);
-        wallCtx.lineTo(tileWidth / 2, tileHeight);
-        wallCtx.lineTo(0, tileHeight / 2);
+        wallCtx.moveTo(tileWidth / 2, 0);                    // Haut
+        wallCtx.lineTo(tileWidth, tileHeight / 2);           // Droite
+        wallCtx.lineTo(tileWidth / 2, tileHeight);           // Bas
+        wallCtx.lineTo(0, tileHeight / 2);                   // Gauche
         wallCtx.closePath();
         wallCtx.fill();
+        wallCtx.stroke();
 
         this.textures.addCanvas('iso-wall', wallCanvas);
 
-        console.log('✅ Tiles isométriques créées');
+        console.log('✅ Cubes isométriques parfaits créés (1m³)');
     }
 
     createPlayerSprite() {
