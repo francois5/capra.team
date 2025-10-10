@@ -65,45 +65,7 @@ class PreloadScene extends Phaser.Scene {
     }
 
     createPlayerSprite() {
-        // Charger les spritesheets du héros depuis Ludo.ai
-        // Créer un sprite simple pour le développement si les assets ne chargent pas
-
-        // Tenter de charger les vraies images
-        this.load.spritesheet('hero-idle', 'assets/sprites/hero/idle-256px-16.png', {
-            frameWidth: 792,  // Largeur totale si c'est une seule image
-            frameHeight: 1768
-        });
-
-        this.load.spritesheet('hero-walk-left', 'assets/sprites/hero/walk-left-256px-16.png', {
-            frameWidth: 684,
-            frameHeight: 1124
-        });
-
-        this.load.spritesheet('hero-walk-right', 'assets/sprites/hero/walk-right-256px-16.png', {
-            frameWidth: 1000,
-            frameHeight: 1760
-        });
-
-        // Fallback: créer des sprites SVG simples si les images ne se chargent pas
-        this.load.on('loaderror', (file) => {
-            if (file.key.startsWith('hero-')) {
-                console.warn(`Erreur de chargement de ${file.key}, utilisation du fallback SVG`);
-                this.createFallbackPlayerSprite(file.key);
-            }
-        });
-    }
-
-    createFallbackPlayerSprite(key) {
-        // Créer un sprite simple en SVG comme fallback
-        const playerSVG = `
-            <svg width="32" height="32" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="16" cy="16" r="12" fill="#4CAF50" stroke="#2E7D32" stroke-width="2"/>
-                <circle cx="12" cy="12" r="2" fill="#FFF"/>
-                <circle cx="20" cy="12" r="2" fill="#FFF"/>
-                <path d="M 10 20 Q 16 24 22 20" stroke="#2E7D32" stroke-width="2" fill="none"/>
-            </svg>
-        `;
-        this.textures.addBase64(key, 'data:image/svg+xml;base64,' + btoa(playerSVG));
+        // Ne rien charger ici, tout sera créé dans create()
     }
 
     createNPCSprites() {
@@ -179,7 +141,10 @@ class PreloadScene extends Phaser.Scene {
     }
 
     create() {
-        console.log('PreloadScene: create started, launching GameScene');
+        console.log('PreloadScene: create started, creating fallback sprites');
+
+        // Créer les spritesheets programmatiques
+        this.createFallbackPlayerSprites();
 
         // Masquer l'écran de chargement HTML
         const loadingScreen = document.getElementById('loadingScreen');
@@ -187,7 +152,89 @@ class PreloadScene extends Phaser.Scene {
             loadingScreen.style.display = 'none';
         }
 
+        console.log('PreloadScene: launching GameScene');
         // Démarrer la scène principale
         this.scene.start('GameScene');
+    }
+
+    createFallbackPlayerSprites() {
+        // Créer un canvas pour le spritesheet idle (4 frames)
+        const idleCanvas = document.createElement('canvas');
+        idleCanvas.width = 32 * 4;
+        idleCanvas.height = 32;
+        const idleCtx = idleCanvas.getContext('2d');
+
+        for (let i = 0; i < 4; i++) {
+            const x = i * 32;
+            idleCtx.fillStyle = '#4CAF50';
+            idleCtx.beginPath();
+            idleCtx.arc(x + 16, 16, 12, 0, Math.PI * 2);
+            idleCtx.fill();
+            idleCtx.fillStyle = '#FFF';
+            idleCtx.beginPath();
+            idleCtx.arc(x + 12, 12, 2, 0, Math.PI * 2);
+            idleCtx.arc(x + 20, 12, 2, 0, Math.PI * 2);
+            idleCtx.fill();
+        }
+
+        this.textures.addCanvas('hero-idle', idleCanvas);
+        this.textures.get('hero-idle').add('__BASE', 0, 0, 0, 32, 32);
+        for (let i = 0; i < 4; i++) {
+            this.textures.get('hero-idle').add(i, 0, i * 32, 0, 32, 32);
+        }
+
+        // Créer canvas pour walk-left
+        const leftCanvas = document.createElement('canvas');
+        leftCanvas.width = 32 * 8;
+        leftCanvas.height = 32;
+        const leftCtx = leftCanvas.getContext('2d');
+
+        for (let i = 0; i < 8; i++) {
+            const x = i * 32;
+            const shade = i % 2 === 0 ? '#4CAF50' : '#66BB6A';
+            leftCtx.fillStyle = shade;
+            leftCtx.beginPath();
+            leftCtx.arc(x + 16, 16, 12, 0, Math.PI * 2);
+            leftCtx.fill();
+            leftCtx.fillStyle = '#FFF';
+            leftCtx.beginPath();
+            leftCtx.arc(x + 12, 12, 2, 0, Math.PI * 2);
+            leftCtx.arc(x + 20, 12, 2, 0, Math.PI * 2);
+            leftCtx.fill();
+        }
+
+        this.textures.addCanvas('hero-walk-left', leftCanvas);
+        this.textures.get('hero-walk-left').add('__BASE', 0, 0, 0, 32, 32);
+        for (let i = 0; i < 8; i++) {
+            this.textures.get('hero-walk-left').add(i, 0, i * 32, 0, 32, 32);
+        }
+
+        // Créer canvas pour walk-right
+        const rightCanvas = document.createElement('canvas');
+        rightCanvas.width = 32 * 16; // 16 frames pour up et down
+        rightCanvas.height = 32;
+        const rightCtx = rightCanvas.getContext('2d');
+
+        for (let i = 0; i < 16; i++) {
+            const x = i * 32;
+            const shade = i % 2 === 0 ? '#4CAF50' : '#66BB6A';
+            rightCtx.fillStyle = shade;
+            rightCtx.beginPath();
+            rightCtx.arc(x + 16, 16, 12, 0, Math.PI * 2);
+            rightCtx.fill();
+            rightCtx.fillStyle = '#FFF';
+            rightCtx.beginPath();
+            rightCtx.arc(x + 12, 12, 2, 0, Math.PI * 2);
+            rightCtx.arc(x + 20, 12, 2, 0, Math.PI * 2);
+            rightCtx.fill();
+        }
+
+        this.textures.addCanvas('hero-walk-right', rightCanvas);
+        this.textures.get('hero-walk-right').add('__BASE', 0, 0, 0, 32, 32);
+        for (let i = 0; i < 16; i++) {
+            this.textures.get('hero-walk-right').add(i, 0, i * 32, 0, 32, 32);
+        }
+
+        console.log('✅ Fallback player sprites created');
     }
 }

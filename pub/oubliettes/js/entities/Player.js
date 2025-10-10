@@ -5,12 +5,11 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        // Configuration physique - ajustée pour les sprites haute résolution de Ludo.ai
+        // Configuration physique - Vue top-down
         this.setCollideWorldBounds(true);
-        // Les sprites font ~1700px de haut, avec échelle 0.038 = ~64px (2 blocs)
-        // 1 tile = 32px, donc 2 blocs = 64px
-        this.body.setSize(28, 60); // Hitbox de 2 blocs de haut (60px pour laisser espace en haut)
-        this.body.setOffset(2, 4); // Centré avec petit espace en haut
+        // Hitbox plus petite et centrée pour vue de dessus
+        this.body.setSize(24, 24); // Hitbox carrée pour top-down
+        this.body.setOffset(4, 8); // Centré sur le sprite
 
         // Debug: afficher la hitbox
         this.body.debugShowBody = true;
@@ -28,15 +27,6 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.facing = 'down';
         this.isMoving = false;
         this.canMove = true;
-        this.isCrouching = false;
-
-        // Dimensions de la hitbox (1 bloc = 32px)
-        this.normalHeight = 60;  // 2 blocs (60px avec espace en haut)
-        this.normalWidth = 28;
-        this.crouchHeight = 30;  // 1 bloc
-        this.normalOffsetX = 2;
-        this.normalOffsetY = 4;
-        this.crouchOffsetY = 34; // Positionner la hitbox en bas quand accroupi
 
         // Inventaire
         this.inventory = [
@@ -45,7 +35,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         ];
 
         // Contrôles
-        this.keys = scene.input.keyboard.addKeys('W,S,A,D,SPACE,E,SHIFT');
+        this.keys = scene.input.keyboard.addKeys('W,S,A,D,SPACE,E');
         this.cursors = scene.input.keyboard.createCursorKeys();
 
         // Interface utilisateur
@@ -56,82 +46,79 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     setupAnimations() {
-        // Animation idle (repos) - 16 frames
+        // Animation idle vers le bas (vue top-down)
         this.scene.anims.create({
-            key: 'hero-idle',
-            frames: this.scene.anims.generateFrameNumbers('hero-idle', { start: 0, end: 15 }),
-            frameRate: 8, // 8 frames par seconde pour une animation fluide
-            repeat: -1    // Répéter à l'infini
-        });
-
-        // Animation marche vers la gauche - 16 frames
-        this.scene.anims.create({
-            key: 'hero-walk-left',
-            frames: this.scene.anims.generateFrameNumbers('hero-walk-left', { start: 0, end: 15 }),
-            frameRate: 12, // Un peu plus rapide pour la marche
+            key: 'hero-idle-down',
+            frames: this.scene.anims.generateFrameNumbers('hero-idle', { start: 0, end: 3 }),
+            frameRate: 6,
             repeat: -1
         });
 
-        // Animation marche vers la droite - 16 frames
+        // Animation marche vers le bas
+        this.scene.anims.create({
+            key: 'hero-walk-down',
+            frames: this.scene.anims.generateFrameNumbers('hero-walk-right', { start: 0, end: 7 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        // Animation marche vers le haut
+        this.scene.anims.create({
+            key: 'hero-walk-up',
+            frames: this.scene.anims.generateFrameNumbers('hero-walk-right', { start: 8, end: 15 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        // Animation marche vers la gauche
+        this.scene.anims.create({
+            key: 'hero-walk-left',
+            frames: this.scene.anims.generateFrameNumbers('hero-walk-left', { start: 0, end: 7 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        // Animation marche vers la droite
         this.scene.anims.create({
             key: 'hero-walk-right',
-            frames: this.scene.anims.generateFrameNumbers('hero-walk-right', { start: 0, end: 15 }),
-            frameRate: 12, // Même vitesse que la marche gauche
+            frames: this.scene.anims.generateFrameNumbers('hero-walk-right', { start: 0, end: 7 }),
+            frameRate: 10,
             repeat: -1
         });
 
         // Commencer avec l'animation idle
-        this.play('hero-idle');
+        this.play('hero-idle-down');
     }
 
     update() {
         if (!this.canMove) return;
 
-        this.handleCrouch();
         this.handleMovement();
         this.handleActions();
     }
 
-    handleCrouch() {
-        // Gérer l'état d'accroupissement
-        if (this.keys.SHIFT.isDown) {
-            if (!this.isCrouching) {
-                this.isCrouching = true;
-                // Ajuster la hitbox pour être 1 bloc de haut (~30px)
-                this.body.setSize(this.normalWidth, this.crouchHeight);
-                this.body.setOffset(this.normalOffsetX, this.crouchOffsetY);
-            }
-        } else {
-            if (this.isCrouching) {
-                this.isCrouching = false;
-                // Restaurer la hitbox normale de 2 blocs (~60px)
-                this.body.setSize(this.normalWidth, this.normalHeight);
-                this.body.setOffset(this.normalOffsetX, this.normalOffsetY);
-            }
-        }
-    }
-
     handleMovement() {
-        // Vitesse réduite de 50% quand accroupi
-        const speed = this.isCrouching ? this.speed * 0.5 : this.speed;
+        // Mouvement top-down en 8 directions
         let velocityX = 0;
         let velocityY = 0;
 
         // Vérifier les entrées de mouvement
         if (this.keys.A.isDown || this.cursors.left.isDown) {
-            velocityX = -speed;
-            this.facing = 'left';
+            velocityX = -this.speed;
         } else if (this.keys.D.isDown || this.cursors.right.isDown) {
-            velocityX = speed;
-            this.facing = 'right';
+            velocityX = this.speed;
         }
 
         if (this.keys.W.isDown || this.cursors.up.isDown) {
-            velocityY = -speed;
-            this.facing = 'up';
+            velocityY = -this.speed;
         } else if (this.keys.S.isDown || this.cursors.down.isDown) {
-            velocityY = speed;
-            this.facing = 'down';
+            velocityY = this.speed;
+        }
+
+        // Normaliser la vitesse diagonale pour éviter d'aller plus vite en diagonale
+        if (velocityX !== 0 && velocityY !== 0) {
+            velocityX *= 0.707; // Math.sqrt(2) / 2
+            velocityY *= 0.707;
         }
 
         // Appliquer la vélocité
@@ -142,24 +129,37 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.isMoving = velocityX !== 0 || velocityY !== 0;
 
         if (this.isMoving) {
-            // Choisir l'animation selon la direction
-            if (this.facing === 'left') {
-                if (this.anims.currentAnim?.key !== 'hero-walk-left') {
-                    this.play('hero-walk-left');
-                }
-            } else if (this.facing === 'right') {
-                if (this.anims.currentAnim?.key !== 'hero-walk-right') {
-                    this.play('hero-walk-right');
+            // Déterminer la direction principale pour l'animation
+            if (Math.abs(velocityY) > Math.abs(velocityX)) {
+                // Mouvement vertical dominant
+                if (velocityY < 0) {
+                    this.facing = 'up';
+                    if (this.anims.currentAnim?.key !== 'hero-walk-up') {
+                        this.play('hero-walk-up');
+                    }
+                } else {
+                    this.facing = 'down';
+                    if (this.anims.currentAnim?.key !== 'hero-walk-down') {
+                        this.play('hero-walk-down');
+                    }
                 }
             } else {
-                // Pour up/down, on garde la dernière direction de marche ou on utilise right par défaut
-                if (this.anims.currentAnim?.key !== 'hero-walk-left' && this.anims.currentAnim?.key !== 'hero-walk-right') {
-                    this.play('hero-walk-right');
+                // Mouvement horizontal dominant
+                if (velocityX < 0) {
+                    this.facing = 'left';
+                    if (this.anims.currentAnim?.key !== 'hero-walk-left') {
+                        this.play('hero-walk-left');
+                    }
+                } else {
+                    this.facing = 'right';
+                    if (this.anims.currentAnim?.key !== 'hero-walk-right') {
+                        this.play('hero-walk-right');
+                    }
                 }
             }
         } else if (!this.isMoving && wasMoving) {
             // Retourner à l'animation idle quand on s'arrête
-            this.play('hero-idle');
+            this.play('hero-idle-down');
         }
     }
 

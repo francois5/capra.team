@@ -9,17 +9,43 @@ class UIManager {
     }
 
     updatePlayerStats(stats) {
-        // Mettre à jour l'UI HTML
-        document.getElementById('hp').textContent = stats.hp;
-        document.getElementById('maxHp').textContent = stats.maxHp;
-        document.getElementById('level').textContent = stats.level;
-        document.getElementById('xp').textContent = stats.xp;
-        document.getElementById('xpToNext').textContent = stats.xpToNext;
-
-        // Ajouter les nouvelles compétences
-        if (stats.skills) {
-            this.updateSkillsDisplay(stats.skills);
+        // Créer ou mettre à jour le panneau de stats
+        let statsDiv = document.getElementById('playerStats');
+        if (!statsDiv) {
+            statsDiv = document.createElement('div');
+            statsDiv.id = 'playerStats';
+            statsDiv.style.cssText = `
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                background: rgba(0, 0, 0, 0.8);
+                padding: 15px;
+                border-radius: 8px;
+                color: white;
+                font-family: 'Courier New', monospace;
+                font-size: 14px;
+                z-index: 100;
+                min-width: 200px;
+            `;
+            document.getElementById('gameContainer').appendChild(statsDiv);
         }
+
+        // Mettre à jour le contenu
+        let statsHTML = '<h3 style="margin: 0 0 10px 0; color: #ffeb3b;">Oubliettes</h3>';
+        statsHTML += `<p style="margin: 3px 0;">❤️ HP: <span style="color: #f44336;">${stats.hp}</span> / ${stats.maxHp}</p>`;
+        statsHTML += `<p style="margin: 3px 0;">⭐ Niveau: ${stats.level}</p>`;
+        statsHTML += `<p style="margin: 3px 0;">✨ XP: ${stats.xp} / ${stats.xpToNext}</p>`;
+
+        // Ajouter les compétences
+        if (stats.skills) {
+            statsHTML += '<hr style="margin: 10px 0; border-color: #444;">';
+            statsHTML += '<p style="margin: 5px 0; color: #ffeb3b;">Compétences:</p>';
+            statsHTML += `<p style="margin: 3px 0;">🔮 Magie: ${stats.skills.magic}</p>`;
+            statsHTML += `<p style="margin: 3px 0;">⚔️ Combat: ${stats.skills.combat}</p>`;
+            statsHTML += `<p style="margin: 3px 0;">💬 Charisme: ${stats.skills.charisma}</p>`;
+        }
+
+        statsDiv.innerHTML = statsHTML;
     }
 
     updateSkillsDisplay(skills) {
@@ -53,18 +79,42 @@ class UIManager {
     }
 
     updateInventory(inventory) {
-        const itemsDiv = document.getElementById('items');
-        itemsDiv.innerHTML = '';
+        // Créer ou mettre à jour le panneau d'inventaire
+        let inventoryDiv = document.getElementById('inventoryPanel');
+        if (!inventoryDiv) {
+            inventoryDiv = document.createElement('div');
+            inventoryDiv.id = 'inventoryPanel';
+            inventoryDiv.style.cssText = `
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: rgba(0, 0, 0, 0.8);
+                padding: 15px;
+                border-radius: 8px;
+                color: white;
+                font-family: 'Courier New', monospace;
+                font-size: 13px;
+                z-index: 100;
+                min-width: 180px;
+            `;
+            document.getElementById('gameContainer').appendChild(inventoryDiv);
+        }
 
-        inventory.forEach(item => {
-            const itemElement = document.createElement('p');
-            if (item.quantity && item.quantity > 1) {
-                itemElement.textContent = `${item.name} x${item.quantity}`;
-            } else {
-                itemElement.textContent = item.name;
-            }
-            itemsDiv.appendChild(itemElement);
-        });
+        let inventoryHTML = '<h3 style="margin: 0 0 10px 0; color: #ffeb3b;">Inventaire</h3>';
+
+        if (inventory && inventory.length > 0) {
+            inventory.forEach(item => {
+                if (item.quantity && item.quantity > 1) {
+                    inventoryHTML += `<p style="margin: 3px 0;">• ${item.name} x${item.quantity}</p>`;
+                } else {
+                    inventoryHTML += `<p style="margin: 3px 0;">• ${item.name}</p>`;
+                }
+            });
+        } else {
+            inventoryHTML += '<p style="margin: 3px 0; color: #888;">Vide</p>';
+        }
+
+        inventoryDiv.innerHTML = inventoryHTML;
     }
 
     showDialogue(npcName, text) {
