@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oubliettes</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            border: 4px solid #654321;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            image-rendering: pixelated;
+            cursor: crosshair;
+        }
+
+        #info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        #controls {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">🔄 Chargement d'Oubliettes...</div>
+
+    <div id="info" style="display:none;">
+        <div>🎮 <strong>Oubliettes</strong></div>
+        <div>Blocs minés: <span id="minedCount">0</span></div>
+        <div>Position: <span id="position">0, 0</span></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="controls" style="display:none;">
+        ⬅️ Q : Gauche | ➡️ D : Droite | ⬆️ Z/W/Espace : Sauter | ⬇️ S/Shift : S'accroupir | 🔧 E : Interagir | 🖱️ Clic : Creuser/Placer
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Configuration
+        const BLOCK_SIZE = 32;
+        const GRID_WIDTH = 100;
+        const GRID_HEIGHT = 80;
+        const VIEWPORT_WIDTH = 25;
+        const VIEWPORT_HEIGHT = 20;
+        canvas.width = VIEWPORT_WIDTH * BLOCK_SIZE;
+        canvas.height = VIEWPORT_HEIGHT * BLOCK_SIZE;
+
+        const VISION_RADIUS = 12;
+
+        // Types de blocs
+        const BLOCKS = {
+            AIR: 0,
+            DIRT: 1,
+            STONE: 2,
+            GRASS: 3,
+            BEDROCK: 4
+        };
+
+        const BLOCK_COLORS = {
+            [BLOCKS.AIR]: 'transparent',
+            [BLOCKS.DIRT]: '#8B4513',
+            [BLOCKS.STONE]: '#808080',
+            [BLOCKS.GRASS]: '#7CFC00',
+            [BLOCKS.BEDROCK]: '#1a1a1a'
+        };
+
+        // Grille du monde
+        let world = [];
+        let minedCount = 0;
+
+        // Caméra
+        const camera = {
+            x: 0,
+            y: 0
+        };
+
+        // Sprites
+        const sprites = {
+            heroIdle: null,
+            heroWalkLeft: null,
+            heroWalkRight: null,
+            loaded: false
+        };
+
+        // Charger les sprites
+        function loadSprites() {
+            return new Promise((resolve) => {
+                let loadedCount = 0;
+                const totalSprites = 3;
+
+                function checkComplete() {
+                    loadedCount++;
+                    if (loadedCount === totalSprites) {
+                        sprites.loaded = true;
+                        resolve();
+                    }
+                }
+
+                sprites.heroIdle = new Image();
+                sprites.heroIdle.onload = checkComplete;
+                sprites.heroIdle.onerror = () => { console.warn('Idle sprite non chargé'); checkComplete(); };
+                sprites.heroIdle.src = 'assets/sprites/hero/idle-256px-16.png';
+
+                sprites.heroWalkLeft = new Image();
+                sprites.heroWalkLeft.onload = checkComplete;
+                sprites.heroWalkLeft.onerror = () => { console.warn('Walk-left sprite non chargé'); checkComplete(); };
+                sprites.heroWalkLeft.src = 'assets/sprites/hero/walk-left-256px-16.png';
+
+                sprites.heroWalkRight = new Image();
+                sprites.heroWalkRight.onload = checkComplete;
+                sprites.heroWalkRight.onerror = () => { console.warn('Walk-right sprite non chargé'); checkComplete(); };
+                sprites.heroWalkRight.src = 'assets/sprites/hero/walk-right-256px-16.png';
+            });
+        }
+
+        // Générateur de bruit de Perlin
+        class PerlinNoise {
+            constructor() {
+                this.permutation = [];
+                for (let i = 0; i < 256; i++) {
+                    this.permutation[i] = i;
+                }
+                for (let i = 255; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.permutation[i], this.permutation[j]] = [this.permutation[j], this.permutation[i]];
+                }
+                this.permutation = this.permutation.concat(this.permutation);
+            }
+
+            fade(t) {
+                return t * t * t * (t * (t * 6 - 15) + 10);
+            }
+
+            lerp(t, a, b) {
+                return a + t * (b - a);
+            }
+
+            grad(hash, x, y) {
+                const h = hash & 3;
+                const u = h < 2 ? x : y;
+                const v = h < 2 ? y : x;
+                return ((h & 1) ? -u : u) + ((h & 2) ? -2.0 * v : 2.0 * v);
+            }
+
+            noise(x, y) {
+                const X = Math.floor(x) & 255;
+                const Y = Math.floor(y) & 255;
+                x -= Math.floor(x);
+                y -= Math.floor(y);
+                const u = this.fade(x);
+                const v = this.fade(y);
+                const a = this.permutation[X] + Y;
+                const b = this.permutation[X + 1] + Y;
+                return this.lerp(v,
+                    this.lerp(u, this.grad(this.permutation[a], x, y),
+                        this.grad(this.permutation[b], x - 1, y)),
+                    this.lerp(u, this.grad(this.permutation[a + 1], x, y - 1),
+                        this.grad(this.permutation[b + 1], x - 1, y - 1))
+                );
+            }
+
+            octaveNoise(x, y, octaves, persistence) {
+                let total = 0;
+                let frequency = 1;
+                let amplitude = 1;
+                let maxValue = 0;
+
+                for (let i = 0; i < octaves; i++) {
+                    total += this.noise(x * frequency, y * frequency) * amplitude;
+                    maxValue += amplitude;
+                    amplitude *= persistence;
+                    frequency *= 2;
+                }
+
+                return total / maxValue;
+            }
+        }
+
+        const perlin = new PerlinNoise();
+
+        // Joueur
+        const player = {
+            x: GRID_WIDTH / 2,
+            y: GRID_HEIGHT / 2,
+            width: 0.8,
+            height: 2,
+            normalHeight: 2,
+            crouchHeight: 1,
+            vx: 0,
+            vy: 0,
+            speed: 0.15,
+            crouchSpeed: 0.08,
+            jumpPower: 0.5,
+            onGround: false,
+            isCrouching: false,
+            facing: 'right',  // Direction du regard
+            isMoving: false,
+            animFrame: 0,
+            animSpeed: 0.15
+        };
+
+        const GRAVITY = 0.03;
+        const MAX_FALL_SPEED = 0.8;
+
+        // Initialiser le monde
+        function initWorld() {
+            console.log('🌍 Génération du monde avec Perlin noise...');
+            world = [];
+            const scale = 0.05;
+            const caveThreshold = 0.3;
+
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                world[y] = [];
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    if (y === 0) {
+                        world[y][x] = BLOCKS.BEDROCK;
+                        continue;
+                    }
+
+                    const noiseValue = perlin.octaveNoise(x * scale, y * scale, 4, 0.5);
+
+                    if (noiseValue > caveThreshold) {
+                        world[y][x] = BLOCKS.AIR;
+                    } else {
+                        const depth = GRID_HEIGHT - y;
+                        if (depth < 10) {
+                            world[y][x] = BLOCKS.DIRT;
+                        } else if (depth < 40) {
+                            world[y][x] = BLOCKS.STONE;
+                        } else {
+                            world[y][x] = BLOCKS.BEDROCK;
+                        }
+                    }
+                }
+            }
+
+            // Grotte de départ au centre
+            const centerX = Math.floor(GRID_WIDTH / 2);
+            const centerY = Math.floor(GRID_HEIGHT / 2);
+            for (let dy = -3; dy <= 3; dy++) {
+                for (let dx = -3; dx <= 3; dx++) {
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist <= 3) {
+                        const y = centerY + dy;
+                        const x = centerX + dx;
+                        if (y > 0 && y < GRID_HEIGHT && x >= 0 && x < GRID_WIDTH) {
+                            world[y][x] = BLOCKS.AIR;
+                        }
+                    }
+                }
+            }
+
+            console.log('✅ Monde généré !');
+        }
+
+        // Vérifier collision
+        function checkCollision(x, y, width, height) {
+            const points = [
+                [x, y],
+                [x + width, y],
+                [x, y + height],
+                [x + width, y + height],
+                [x + width/2, y],
+                [x + width/2, y + height],
+            ];
+
+            for (let [px, py] of points) {
+                const bx = Math.floor(px);
+                const by = Math.floor(py);
+
+                if (bx >= 0 && bx < GRID_WIDTH && by >= 0 && by < GRID_HEIGHT) {
+                    if (world[by][bx] !== BLOCKS.AIR) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Mettre à jour la physique
+        function updatePhysics() {
+            player.vy -= GRAVITY;
+            if (player.vy < -MAX_FALL_SPEED) {
+                player.vy = -MAX_FALL_SPEED;
+            }
+
+            const newX = player.x + player.vx;
+            if (!checkCollision(newX, player.y, player.width, player.height)) {
+                player.x = newX;
+            }
+            player.vx *= 0.8;
+
+            const newY = player.y + player.vy;
+            if (!checkCollision(player.x, newY, player.width, player.height)) {
+                player.y = newY;
+                player.onGround = false;
+            } else {
+                if (player.vy < 0) {
+                    player.y = Math.floor(player.y);
+                    player.onGround = true;
+                }
+                player.vy = 0;
+            }
+
+            player.x = Math.max(0, Math.min(GRID_WIDTH - player.width, player.x));
+            player.y = Math.max(0, Math.min(GRID_HEIGHT - player.height, player.y));
+
+            // Animation
+            player.isMoving = Math.abs(player.vx) > 0.01;
+            if (player.isMoving) {
+                player.animFrame += player.animSpeed;
+                if (player.animFrame >= 16) player.animFrame = 0;
+            } else {
+                player.animFrame += player.animSpeed * 0.5;
+                if (player.animFrame >= 16) player.animFrame = 0;
+            }
+        }
+
+        // Mettre à jour la caméra
+        function updateCamera() {
+            camera.x = player.x - VIEWPORT_WIDTH / 2;
+            camera.y = player.y - VIEWPORT_HEIGHT / 2;
+
+            camera.x = Math.max(0, Math.min(GRID_WIDTH - VIEWPORT_WIDTH, camera.x));
+            camera.y = Math.max(0, Math.min(GRID_HEIGHT - VIEWPORT_HEIGHT, camera.y));
+        }
+
+        // Dessiner le monde
+        function drawWorld() {
+            updateCamera();
+
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const startX = Math.floor(camera.x);
+            const startY = Math.floor(camera.y);
+            const endX = Math.ceil(camera.x + VIEWPORT_WIDTH);
+            const endY = Math.ceil(camera.y + VIEWPORT_HEIGHT);
+
+            for (let y = startY; y < endY && y < GRID_HEIGHT; y++) {
+                for (let x = startX; x < endX && x < GRID_WIDTH; x++) {
+                    if (x < 0 || y < 0) continue;
+
+                    const screenX = (x - camera.x) * BLOCK_SIZE;
+                    const screenY = canvas.height - ((y - camera.y + 1) * BLOCK_SIZE);
+
+                    const dx = x - player.x;
+                    const dy = y - player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (world[y][x] !== BLOCKS.AIR) {
+                        const blockType = world[y][x];
+                        ctx.fillStyle = BLOCK_COLORS[blockType];
+                        ctx.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE);
+
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                        ctx.fillRect(screenX, screenY, BLOCK_SIZE, 2);
+                        ctx.fillRect(screenX, screenY, 2, BLOCK_SIZE);
+
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                        ctx.fillRect(screenX, screenY + BLOCK_SIZE - 2, BLOCK_SIZE, 2);
+                        ctx.fillRect(screenX + BLOCK_SIZE - 2, screenY, 2, BLOCK_SIZE);
+                    }
+
+                    if (distance <= VISION_RADIUS) {
+                        const darknessLevel = distance / VISION_RADIUS;
+                        const fogAlpha = darknessLevel * 0.85;
+
+                        if (fogAlpha > 0) {
+                            ctx.fillStyle = `rgba(0, 0, 0, ${fogAlpha})`;
+                            ctx.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE);
+                        }
+                    } else {
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+                        ctx.fillRect(screenX, screenY, BLOCK_SIZE, BLOCK_SIZE);
+                    }
+                }
+            }
+
+            drawPlayer();
+        }
+
+        // Dessiner le joueur avec sprites (grille 4×4)
+        function drawPlayer() {
+            const px = (player.x - camera.x) * BLOCK_SIZE;
+            const py = canvas.height - ((player.y - camera.y + player.height) * BLOCK_SIZE);
+            const width = player.width * BLOCK_SIZE;
+            const height = player.height * BLOCK_SIZE;
+
+            let currentSprite = null;
+            let spriteWidth = 0;
+            let spriteHeight = 0;
+            let frameWidth = 0;
+            let frameHeight = 0;
+
+            // Choisir le sprite selon l'état (grille 4×4 = 16 frames)
+            if (player.isMoving) {
+                if (player.facing === 'left' && sprites.heroWalkLeft && sprites.heroWalkLeft.complete) {
+                    currentSprite = sprites.heroWalkLeft;
+                    spriteWidth = 684;
+                    spriteHeight = 1124;
+                } else if (player.facing === 'right' && sprites.heroWalkRight && sprites.heroWalkRight.complete) {
+                    currentSprite = sprites.heroWalkRight;
+                    spriteWidth = 1000;
+                    spriteHeight = 1760;
+                }
+            } else {
+                if (sprites.heroIdle && sprites.heroIdle.complete) {
+                    currentSprite = sprites.heroIdle;
+                    spriteWidth = 792;
+                    spriteHeight = 1768;
+                }
+            }
+
+            // Dessiner le sprite ou fallback
+            if (currentSprite) {
+                // Grille 4×4
+                frameWidth = spriteWidth / 4;
+                frameHeight = spriteHeight / 4;
+
+                const frame = Math.floor(player.animFrame);
+                const col = frame % 4;
+                const row = Math.floor(frame / 4);
+
+                const sx = col * frameWidth;
+                const sy = row * frameHeight;
+
+                // Calculer la taille proportionnelle
+                const scale = height / frameHeight;
+                const scaledWidth = frameWidth * scale;
+
+                ctx.save();
+                ctx.drawImage(
+                    currentSprite,
+                    sx, sy, frameWidth, frameHeight,
+                    px + (width - scaledWidth) / 2, py, scaledWidth, height
+                );
+                ctx.restore();
+            } else {
+                // Fallback: dessiner un rectangle simple
+                ctx.fillStyle = player.isCrouching ? '#4DB8E8' : '#2980b9';
+                ctx.fillRect(px, py, width, height);
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(px, py, width, height);
+            }
+        }
+
+        // UI
+        function updateUI() {
+            document.getElementById('minedCount').textContent = minedCount;
+            document.getElementById('position').textContent =
+                `${Math.floor(player.x)}, ${Math.floor(player.y)}`;
+        }
+
+        // Boucle de jeu
+        function gameLoop() {
+            updatePhysics();
+            drawWorld();
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Contrôles
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+
+            if ((e.key.toLowerCase() === 'z' || e.key.toLowerCase() === 'w' || e.key === ' ') && player.onGround) {
+                player.vy = player.jumpPower;
+                player.onGround = false;
+            }
+
+            if (e.key === 'Shift' || e.key.toLowerCase() === 's') {
+                if (!player.isCrouching) {
+                    player.isCrouching = true;
+                    player.height = player.crouchHeight;
+                }
+            }
+
+            if (e.key.toLowerCase() === 'e') {
+                console.log('🔧 Touche E: Interaction');
+            }
+
+            if (e.key.toLowerCase() === 'a') {
+                console.log('🔄 Touche A: Équipement précédent');
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+
+            if (e.key === 'Shift' || e.key.toLowerCase() === 's') {
+                const oldHeight = player.height;
+                player.height = player.normalHeight;
+
+                if (checkCollision(player.x, player.y, player.width, player.height)) {
+                    player.height = oldHeight;
+                } else {
+                    player.isCrouching = false;
+                }
+            }
+        });
+
+        setInterval(() => {
+            const currentSpeed = player.isCrouching ? player.crouchSpeed : player.speed;
+
+            if (keys['q'] || keys['arrowleft']) {
+                player.vx = -currentSpeed;
+                player.facing = 'left';
+            } else if (keys['d'] || keys['arrowright']) {
+                player.vx = currentSpeed;
+                player.facing = 'right';
+            }
+        }, 16);
+
+        // Creuser
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const bx = Math.floor(mouseX / BLOCK_SIZE + camera.x);
+            const by = Math.floor((canvas.height - mouseY) / BLOCK_SIZE + camera.y);
+
+            if (bx >= 0 && bx < GRID_WIDTH && by >= 0 && by < GRID_HEIGHT) {
+                const dx = bx - player.x;
+                const dy = by - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance <= 5) {
+                    if (world[by][bx] !== BLOCKS.AIR && world[by][bx] !== BLOCKS.BEDROCK) {
+                        world[by][bx] = BLOCKS.AIR;
+                        minedCount++;
+                    } else if (world[by][bx] === BLOCKS.AIR) {
+                        if (!checkCollision(player.x, player.y, player.width, player.height)) {
+                            world[by][bx] = BLOCKS.DIRT;
+                        }
+                    }
+                }
+            }
+        });
+
+        // Démarrer
+        async function start() {
+            console.log('🎮 Oubliettes - Chargement...');
+
+            await loadSprites();
+
+            console.log('✅ Sprites chargés');
+
+            initWorld();
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('info').style.display = 'block';
+            document.getElementById('controls').style.display = 'block';
+
+            gameLoop();
+
+            console.log('🎮 Oubliettes démarré !');
+        }
+
+        start();
+    </script>
+</body>
+</html>
