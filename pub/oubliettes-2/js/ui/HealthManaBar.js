@@ -53,13 +53,21 @@ class HealthManaBar {
 
         this.maxBarWidth = barWidth - 4;
 
-        // Affichage du nombre de fidèles
-        this.controlText = scene.add.text(padding, startY + (barHeight + 5) * 2 + 10, '0/1', {
-            fontSize: '18px',
+        // Affichage du nombre de fidèles avec fond
+        const controlY = startY + (barHeight + 5) * 2 + 10;
+
+        // Fond noir pour le compteur
+        this.controlBg = scene.add.rectangle(padding, controlY, 60, 25, 0x000000, 0.8)
+            .setOrigin(0, 0)
+            .setScrollFactor(0)
+            .setDepth(10001);
+
+        this.controlText = scene.add.text(padding + 30, controlY + 12, '0/1', {
+            fontSize: '20px',
             color: '#ffd700',
             fontStyle: 'bold'
         })
-            .setOrigin(0, 0)
+            .setOrigin(0.5, 0.5)
             .setScrollFactor(0)
             .setDepth(10002);
 
