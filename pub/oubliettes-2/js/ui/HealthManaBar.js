@@ -81,7 +81,17 @@ class HealthManaBar {
 
         // Mettre à jour l'affichage des fidèles
         if (this.controlText) {
-            this.controlText.setText(`${controlledMonsters}/${maxControlledMonsters}`);
+            const text = `${controlledMonsters}/${maxControlledMonsters}`;
+            this.controlText.setText(text);
+            // Debug pour vérifier
+            if (!this.controlText._debugLogged) {
+                console.log(`🔍 Monster counter text set to: "${text}"`);
+                console.log(`🔍 controlText position: (${this.controlText.x}, ${this.controlText.y})`);
+                console.log(`🔍 controlText visible: ${this.controlText.visible}, alpha: ${this.controlText.alpha}, depth: ${this.controlText.depth}`);
+                this.controlText._debugLogged = true;
+            }
+        } else {
+            console.warn('⚠️ controlText is null or undefined!');
         }
     }
 }
