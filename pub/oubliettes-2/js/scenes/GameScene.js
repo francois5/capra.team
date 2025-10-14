@@ -76,7 +76,7 @@ class GameScene extends Phaser.Scene {
         this.createAnimations();
 
         // Générer le monde
-        this.world = new WorldGenerator(500, 500);
+        this.world = new WorldGenerator(100, 100);
         this.worldData = this.world.generate();
 
         // Container pour organiser les layers
