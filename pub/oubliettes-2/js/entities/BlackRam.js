@@ -170,9 +170,7 @@ class BlackRam extends Phaser.Physics.Arcade.Sprite {
 
         // Mettre à jour les barres
         this.updateHealthBar();
-        if (this.team === 'enemy') {
-            this.updateLoyaltyBar();
-        }
+        this.updateLoyaltyBar(); // Toujours afficher la barre de loyauté
     }
 
     /**
@@ -273,15 +271,8 @@ class BlackRam extends Phaser.Physics.Arcade.Sprite {
             this.setTint(0xffd700);
             this.territoryColor = 0xffd700;
 
-            // Détruire la barre de loyauté
-            if (this.loyaltyBar) {
-                this.loyaltyBar.destroy();
-                this.loyaltyBar = null;
-            }
-            if (this.loyaltyBarBg) {
-                this.loyaltyBarBg.destroy();
-                this.loyaltyBarBg = null;
-            }
+            // GARDER la barre de loyauté visible (pleine et orange)
+            // La loyauté reste à 0, donc la barre reste pleine et orange
 
             this.state = 'idle';
             console.log(`✅ Bélier converti en allié doré`);

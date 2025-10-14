@@ -289,7 +289,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
         // Si nouvelle position différente et valide, démarrer le mouvement
         if ((targetX !== this.cartX || targetY !== this.cartY)) {
-            if (this.scene.world.isPassable(targetX, targetY)) {
+            if (this.scene.world.isPassable(targetX, targetY) && !this.scene.isPositionOccupied(targetX, targetY, this)) {
                 this.startMoveTo(targetX, targetY);
             }
         }
@@ -429,8 +429,8 @@ class Player extends Phaser.Physics.Arcade.Sprite {
             nextY = this.cartY + (dy > 0 ? 1 : -1);
         }
 
-        // Vérifier si c'est passable
-        if (this.scene.world.isPassable(nextX, nextY)) {
+        // Vérifier si c'est passable et non occupé
+        if (this.scene.world.isPassable(nextX, nextY) && !this.scene.isPositionOccupied(nextX, nextY, this)) {
             this.startMoveTo(nextX, nextY);
         } else {
             // Bloqué, essayer l'autre axe
@@ -442,7 +442,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
                 nextY = this.cartY;
             }
 
-            if (this.scene.world.isPassable(nextX, nextY)) {
+            if (this.scene.world.isPassable(nextX, nextY) && !this.scene.isPositionOccupied(nextX, nextY, this)) {
                 this.startMoveTo(nextX, nextY);
             } else {
                 // Impossible de se déplacer, supprimer définitivement la tâche

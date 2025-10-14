@@ -289,7 +289,7 @@ class GiantRat extends Phaser.Physics.Arcade.Sprite {
             nextY = this.cartY + (dy > 0 ? 1 : -1);
         }
 
-        if (this.scene.world.isPassable(nextX, nextY)) {
+        if (this.scene.world.isPassable(nextX, nextY) && !this.scene.isPositionOccupied(nextX, nextY, this)) {
             this.startMoveTo(nextX, nextY);
         } else {
             // Essayer l'autre axe
@@ -301,7 +301,7 @@ class GiantRat extends Phaser.Physics.Arcade.Sprite {
                 nextY = this.cartY;
             }
 
-            if (this.scene.world.isPassable(nextX, nextY)) {
+            if (this.scene.world.isPassable(nextX, nextY) && !this.scene.isPositionOccupied(nextX, nextY, this)) {
                 this.startMoveTo(nextX, nextY);
             }
         }
@@ -395,7 +395,7 @@ class GiantRat extends Phaser.Physics.Arcade.Sprite {
             nextY = this.cartY + (dy > 0 ? 1 : -1);
         }
 
-        if (this.scene.world.isPassable(nextX, nextY)) {
+        if (this.scene.world.isPassable(nextX, nextY) && !this.scene.isPositionOccupied(nextX, nextY, this)) {
             this.startMoveTo(nextX, nextY);
         } else {
             if (Math.abs(dx) > Math.abs(dy)) {
@@ -406,7 +406,7 @@ class GiantRat extends Phaser.Physics.Arcade.Sprite {
                 nextY = this.cartY;
             }
 
-            if (this.scene.world.isPassable(nextX, nextY)) {
+            if (this.scene.world.isPassable(nextX, nextY) && !this.scene.isPositionOccupied(nextX, nextY, this)) {
                 this.startMoveTo(nextX, nextY);
             }
         }

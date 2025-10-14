@@ -246,4 +246,57 @@ class WorldGenerator {
 
         return region;
     }
+
+    /**
+     * Vérifier si deux positions sont connectées (même salle/espace sans mur entre elles)
+     * Utilise un flood fill limité pour vérifier la connexion
+     * @param {number} x1
+     * @param {number} y1
+     * @param {number} x2
+     * @param {number} y2
+     * @returns {boolean}
+     */
+    areInSameChamber(x1, y1, x2, y2) {
+        // Si une des positions n'est pas passable, pas connecté
+        if (!this.isPassable(x1, y1) || !this.isPassable(x2, y2)) {
+            return false;
+        }
+
+        // Si c'est la même position
+        if (x1 === x2 && y1 === y2) {
+            return true;
+        }
+
+        // Flood fill limité pour vérifier la connexion
+        const visited = new Set();
+        const queue = [{x: x1, y: y1}];
+        visited.add(`${x1},${y1}`);
+        const maxSteps = 100; // Limite pour éviter les boucles infinies
+        let steps = 0;
+
+        while (queue.length > 0 && steps < maxSteps) {
+            const {x, y} = queue.shift();
+            steps++;
+
+            // Si on a trouvé la cible
+            if (x === x2 && y === y2) {
+                return true;
+            }
+
+            // Explorer les 4 voisins
+            const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+            for (const [dx, dy] of directions) {
+                const nx = x + dx;
+                const ny = y + dy;
+                const key = `${nx},${ny}`;
+
+                if (!visited.has(key) && this.isPassable(nx, ny)) {
+                    visited.add(key);
+                    queue.push({x: nx, y: ny});
+                }
+            }
+        }
+
+        return false;
+    }
 }

@@ -457,6 +457,9 @@ class GameScene extends Phaser.Scene {
         if (this.conversionBeam.active) {
             this.updateConversionBeam(delta);
         }
+
+        // Mettre à jour la transparence des murs
+        this.updateWallTransparency();
     }
 
     /**
@@ -761,7 +764,75 @@ class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Trouver l'ennemi le plus proche du joueur
+     * Vérifier si une position est occupée par une entité
+     * @param {number} x - Position X dans la grille
+     * @param {number} y - Position Y dans la grille
+     * @param {Object} excludeEntity - Entité à exclure de la vérification
+     * @returns {boolean}
+     */
+    isPositionOccupied(x, y, excludeEntity = null) {
+        // Le joueur peut passer par-dessus ses fidèles
+        const isPlayer = excludeEntity === this.player;
+
+        // Vérifier le joueur
+        if (this.player && this.player !== excludeEntity &&
+            this.player.cartX === x && this.player.cartY === y) {
+            return true;
+        }
+
+        // Vérifier les ennemis
+        if (this.enemies) {
+            for (const enemy of this.enemies) {
+                if (enemy !== excludeEntity && enemy.state !== 'dead' &&
+                    enemy.cartX === x && enemy.cartY === y) {
+                    return true;
+                }
+            }
+        }
+
+        // Vérifier les béliers noirs
+        if (this.blackRams) {
+            for (const ram of this.blackRams) {
+                if (ram !== excludeEntity && ram.state !== 'dead' &&
+                    ram.cartX === x && ram.cartY === y) {
+                    // Le joueur peut passer sur les béliers alliés
+                    if (isPlayer && ram.team === 'ally') {
+                        continue;
+                    }
+                    return true;
+                }
+            }
+        }
+
+        // Vérifier les rats géants
+        if (this.giantRats) {
+            for (const rat of this.giantRats) {
+                if (rat !== excludeEntity && rat.state !== 'dead' &&
+                    rat.cartX === x && rat.cartY === y) {
+                    // Le joueur peut passer sur les rats alliés
+                    if (isPlayer && rat.team === 'ally') {
+                        continue;
+                    }
+                    return true;
+                }
+            }
+        }
+
+        // Vérifier les workers
+        if (this.workers) {
+            for (const worker of this.workers) {
+                if (worker !== excludeEntity && worker.state !== 'dead' &&
+                    worker.cartX === x && worker.cartY === y) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Trouver l'ennemi le plus proche du joueur dans la même chambre
      * @returns {Enemy|BlackRam|null}
      */
     findNearestEnemy() {
@@ -772,6 +843,11 @@ class GameScene extends Phaser.Scene {
         if (this.enemies) {
             this.enemies.forEach(enemy => {
                 if (enemy.state === 'dead' || enemy.team === 'ally') return;
+
+                // Vérifier si dans la même chambre
+                if (!this.world.areInSameChamber(this.player.cartX, this.player.cartY, enemy.cartX, enemy.cartY)) {
+                    return;
+                }
 
                 const dx = enemy.cartX - this.player.cartX;
                 const dy = enemy.cartY - this.player.cartY;
@@ -789,6 +865,11 @@ class GameScene extends Phaser.Scene {
             this.blackRams.forEach(ram => {
                 if (ram.state === 'dead' || ram.team === 'ally') return;
 
+                // Vérifier si dans la même chambre
+                if (!this.world.areInSameChamber(this.player.cartX, this.player.cartY, ram.cartX, ram.cartY)) {
+                    return;
+                }
+
                 const dx = ram.cartX - this.player.cartX;
                 const dy = ram.cartY - this.player.cartY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
@@ -804,6 +885,11 @@ class GameScene extends Phaser.Scene {
         if (this.giantRats) {
             this.giantRats.forEach(rat => {
                 if (rat.state === 'dead' || rat.team === 'ally') return;
+
+                // Vérifier si dans la même chambre
+                if (!this.world.areInSameChamber(this.player.cartX, this.player.cartY, rat.cartX, rat.cartY)) {
+                    return;
+                }
 
                 const dx = rat.cartX - this.player.cartX;
                 const dy = rat.cartY - this.player.cartY;
@@ -991,5 +1077,62 @@ class GameScene extends Phaser.Scene {
             this.conversionBeam.graphics.destroy();
             this.conversionBeam.graphics = null;
         }
+    }
+
+    /**
+     * Mettre à jour la transparence des murs pour voir les personnages cachés
+     */
+    updateWallTransparency() {
+        if (!this.player) return;
+
+        // Collecter toutes les entités (joueur, ennemis, rats, béliers)
+        const entities = [this.player];
+
+        if (this.enemies) {
+            entities.push(...this.enemies.filter(e => e.state !== 'dead'));
+        }
+        if (this.giantRats) {
+            entities.push(...this.giantRats.filter(r => r.state !== 'dead'));
+        }
+        if (this.blackRams) {
+            entities.push(...this.blackRams.filter(r => r.state !== 'dead'));
+        }
+        if (this.workers) {
+            entities.push(...this.workers.filter(w => w.state !== 'dead'));
+        }
+
+        // Réinitialiser l'alpha de tous les murs
+        this.tileSprites.forEach(tileData => {
+            if (tileData.tile.type === 'wall') {
+                tileData.sprite.setAlpha(1);
+            }
+        });
+
+        // Pour chaque entité, rendre transparents les murs qui la cachent
+        entities.forEach(entity => {
+            // Vérifier les murs autour et devant l'entité (dans la direction iso)
+            const checkPositions = [
+                // Position de l'entité elle-même
+                { x: entity.cartX, y: entity.cartY },
+                // Positions "devant" en coordonnées isométriques (vers la caméra)
+                { x: entity.cartX - 1, y: entity.cartY },
+                { x: entity.cartX, y: entity.cartY - 1 },
+                { x: entity.cartX - 1, y: entity.cartY - 1 },
+            ];
+
+            checkPositions.forEach(pos => {
+                const tileData = this.getTileSpriteAt(pos.x, pos.y);
+                if (tileData && tileData.tile.type === 'wall') {
+                    // Calculer la profondeur relative
+                    const wallDepth = IsoUtils.getDepth(pos.x, pos.y);
+                    const entityDepth = IsoUtils.getDepth(entity.cartX, entity.cartY);
+
+                    // Si le mur est "devant" l'entité en profondeur iso, le rendre transparent
+                    if (wallDepth >= entityDepth) {
+                        tileData.sprite.setAlpha(0.3);
+                    }
+                }
+            });
+        });
     }
 }
