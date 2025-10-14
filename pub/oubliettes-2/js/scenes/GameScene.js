@@ -1101,10 +1101,13 @@ class GameScene extends Phaser.Scene {
             entities.push(...this.workers.filter(w => w.state !== 'dead'));
         }
 
-        // Réinitialiser l'alpha de tous les murs
+        // Réinitialiser l'alpha et la profondeur de tous les murs
         this.tileSprites.forEach(tileData => {
             if (tileData.tile.type === 'wall') {
                 tileData.sprite.setAlpha(1);
+                // Profondeur normale pour les murs opaques (au-dessus des entités)
+                const depth = IsoUtils.getDepth(tileData.cartX, tileData.cartY);
+                tileData.sprite.setDepth(depth + 0.5);
             }
         });
 
@@ -1130,6 +1133,8 @@ class GameScene extends Phaser.Scene {
                     // Si le mur est "devant" l'entité en profondeur iso, le rendre transparent
                     if (wallDepth >= entityDepth) {
                         tileData.sprite.setAlpha(0.3);
+                        // Mettre le mur transparent DERRIÈRE l'entité pour qu'elle soit visible
+                        tileData.sprite.setDepth(entityDepth - 0.1);
                     }
                 }
             });
