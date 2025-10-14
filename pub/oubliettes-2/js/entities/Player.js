@@ -458,11 +458,39 @@ class Player extends Phaser.Physics.Arcade.Sprite {
      * Commencer à creuser
      */
     startDigging() {
-        this.state = 'digging';
-        console.log(`Héros commence à creuser en (${this.currentTask.x}, ${this.currentTask.y})`);
+        const manaCost = 15;
 
-        // Simuler le temps de creusage (2 secondes)
-        this.scene.time.delayedCall(2000, () => {
+        // Vérifier si assez de mana
+        if (this.mana < manaCost) {
+            console.log('⚠️ Pas assez de mana pour creuser !');
+            // Annuler la tâche
+            this.scene.taskManager.removeTask(this.currentTask);
+            this.currentTask = null;
+            this.state = 'idle';
+            return;
+        }
+
+        this.state = 'digging';
+        console.log(`⛏ Héros creuse en (${this.currentTask.x}, ${this.currentTask.y})`);
+
+        // Consommer la mana
+        this.mana -= manaCost;
+
+        // Position du joueur
+        const playerIso = IsoUtils.cartToIso(this.cartX + 0.5, this.cartY + 0.5);
+        const playerScreenX = playerIso.x + this.worldOffset.x;
+        const playerScreenY = playerIso.y + this.worldOffset.y - 30;
+
+        // Position du mur
+        const wallIso = IsoUtils.cartToIso(this.currentTask.x + 0.5, this.currentTask.y + 0.5);
+        const wallScreenX = wallIso.x + this.worldOffset.x;
+        const wallScreenY = wallIso.y + this.worldOffset.y;
+
+        // Effet d'éclair rouge
+        LightningEffect.create(this.scene, playerScreenX, playerScreenY, wallScreenX, wallScreenY, 0xff0000, 400);
+
+        // Creuser après l'éclair
+        this.scene.time.delayedCall(200, () => {
             this.finishDigging();
         });
     }
@@ -481,7 +509,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.currentTask = null;
         this.state = 'idle';
 
-        console.log('Héros a fini de creuser');
+        console.log('✅ Mur détruit');
     }
 
     /**

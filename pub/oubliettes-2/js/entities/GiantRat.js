@@ -451,8 +451,10 @@ class GiantRat extends Phaser.Physics.Arcade.Sprite {
         }
 
         this.scene.time.delayedCall(300, () => {
-            this.state = 'idle';
-            this.play('rat-idle-anim', true);
+            if (this.state !== 'dead') {
+                this.state = 'idle';
+                this.play('rat-idle-anim', true);
+            }
         });
     }
 
@@ -490,8 +492,10 @@ class GiantRat extends Phaser.Physics.Arcade.Sprite {
         }
 
         this.scene.time.delayedCall(500, () => {
-            this.state = 'idle';
-            this.play('rat-idle-anim', true);
+            if (this.state !== 'dead') {
+                this.state = 'idle';
+                this.play('rat-idle-anim', true);
+            }
         });
     }
 

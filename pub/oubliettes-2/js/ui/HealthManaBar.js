@@ -54,8 +54,8 @@ class HealthManaBar {
         this.maxBarWidth = barWidth - 4;
 
         // Affichage du nombre de fidèles
-        this.controlText = scene.add.text(padding, startY + (barHeight + 5) * 2 + 10, 'Fidèles: 0/1', {
-            fontSize: '16px',
+        this.controlText = scene.add.text(padding, startY + (barHeight + 5) * 2 + 10, '0/1', {
+            fontSize: '18px',
             color: '#ffd700',
             fontStyle: 'bold'
         })
@@ -81,7 +81,7 @@ class HealthManaBar {
 
         // Mettre à jour l'affichage des fidèles
         if (this.controlText) {
-            this.controlText.setText(`Fidèles: ${controlledMonsters}/${maxControlledMonsters}`);
+            this.controlText.setText(`${controlledMonsters}/${maxControlledMonsters}`);
         }
     }
 }
