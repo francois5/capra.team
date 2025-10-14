@@ -1,6 +1,6 @@
 /**
  * Générateur de monde souterrain isométrique
- * Oubliettes, catacombes et carrières
+ * Cavernes générées avec bruit de Perlin
  */
 class WorldGenerator {
     constructor(width = 20, height = 20) {
@@ -8,6 +8,7 @@ class WorldGenerator {
         this.height = height;
         this.tiles = [];
         this.chambers = []; // Liste des chambres (régions)
+        this.seed = Math.random() * 1000;
     }
 
     /**
@@ -16,116 +17,137 @@ class WorldGenerator {
      */
     generate() {
         this.initializeTiles();
-        this.createChambers();
-        this.addWalls();
+        this.createCavesWithPerlin();
+        this.smoothCaves();
+        this.ensureSpawnArea();
         this.assignTerritories();
         return this.tiles;
     }
 
     /**
-     * Initialiser toutes les tiles comme sol
+     * Initialiser toutes les tiles comme murs
      */
     initializeTiles() {
         for (let y = 0; y < this.height; y++) {
             this.tiles[y] = [];
             for (let x = 0; x < this.width; x++) {
                 this.tiles[y][x] = {
-                    type: 'floor',
-                    passable: true
+                    type: 'wall',
+                    passable: false
                 };
             }
         }
     }
 
     /**
-     * Créer quelques chambres/salles
+     * Bruit de Perlin simplifié (2D)
      */
-    createChambers() {
-        // Chambre centrale
-        this.createChamber(8, 8, 5, 5);
-
-        // Petites salles autour
-        this.createChamber(2, 2, 3, 3);
-        this.createChamber(15, 2, 4, 3);
-        this.createChamber(2, 15, 3, 4);
-        this.createChamber(14, 14, 5, 5);
+    perlin2D(x, y) {
+        // Utiliser une fonction de bruit simple basée sur le sinus
+        const scale = 0.1;
+        const noise = Math.sin(x * scale + this.seed) * Math.cos(y * scale + this.seed);
+        const noise2 = Math.sin((x + y) * scale * 0.5 + this.seed * 2) * 0.5;
+        return (noise + noise2) / 1.5;
     }
 
     /**
-     * Créer une chambre
-     * @param {number} startX
-     * @param {number} startY
-     * @param {number} width
-     * @param {number} height
+     * Créer des cavernes avec bruit de Perlin
      */
-    createChamber(startX, startY, width, height) {
-        for (let y = startY; y < startY + height && y < this.height; y++) {
-            for (let x = startX; x < startX + width && x < this.width; x++) {
-                if (x >= 0 && y >= 0) {
-                    this.tiles[y][x] = {
-                        type: 'floor',
-                        passable: true,
-                        chamber: true
-                    };
-                }
-            }
-        }
-    }
-
-    /**
-     * Ajouter des murs autour des zones vides
-     */
-    addWalls() {
-        const newTiles = JSON.parse(JSON.stringify(this.tiles));
+    createCavesWithPerlin() {
+        const threshold = 0.15; // Seuil pour décider si c'est sol ou mur
 
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
-                // Bords du monde = murs
-                if (x === 0 || y === 0 || x === this.width - 1 || y === this.height - 1) {
-                    newTiles[y][x] = {
-                        type: 'wall',
-                        passable: false
+                // Générer bruit de Perlin à plusieurs échelles (octaves)
+                const noise1 = this.perlin2D(x * 1.0, y * 1.0);
+                const noise2 = this.perlin2D(x * 0.5, y * 0.5) * 0.5;
+                const noise3 = this.perlin2D(x * 0.25, y * 0.25) * 0.25;
+
+                const combinedNoise = noise1 + noise2 + noise3;
+
+                // Si le bruit est au-dessus du seuil, c'est du sol
+                if (combinedNoise > threshold) {
+                    this.tiles[y][x] = {
+                        type: 'floor',
+                        passable: true
                     };
-                }
-                // Ajouter murs autour des chambres pour créer des couloirs
-                else if (!this.tiles[y][x].chamber) {
-                    // Si au moins un voisin est dans une chambre, c'est un couloir
-                    const hasNeighborChamber = this.hasNeighborOfType(x, y, 'chamber');
-                    if (!hasNeighborChamber) {
-                        newTiles[y][x] = {
-                            type: 'wall',
-                            passable: false
-                        };
-                    }
                 }
             }
         }
 
-        this.tiles = newTiles;
+        // Forcer les bords à être des murs
+        for (let x = 0; x < this.width; x++) {
+            this.tiles[0][x] = { type: 'wall', passable: false };
+            this.tiles[this.height - 1][x] = { type: 'wall', passable: false };
+        }
+        for (let y = 0; y < this.height; y++) {
+            this.tiles[y][0] = { type: 'wall', passable: false };
+            this.tiles[y][this.width - 1] = { type: 'wall', passable: false };
+        }
     }
 
     /**
-     * Vérifier si une tile a un voisin d'un type donné
-     * @param {number} x
-     * @param {number} y
-     * @param {string} type
-     * @returns {boolean}
+     * Lisser les cavernes avec automate cellulaire
      */
-    hasNeighborOfType(x, y, type) {
-        const directions = [
-            [-1, 0], [1, 0], [0, -1], [0, 1]
-        ];
+    smoothCaves() {
+        const iterations = 2;
 
-        for (const [dx, dy] of directions) {
-            const nx = x + dx;
-            const ny = y + dy;
-            if (nx >= 0 && ny >= 0 && nx < this.width && ny < this.height) {
-                if (this.tiles[ny][nx][type]) {
-                    return true;
+        for (let i = 0; i < iterations; i++) {
+            const newTiles = JSON.parse(JSON.stringify(this.tiles));
+
+            for (let y = 1; y < this.height - 1; y++) {
+                for (let x = 1; x < this.width - 1; x++) {
+                    const wallCount = this.countNeighborWalls(x, y);
+
+                    // Règle d'automate cellulaire
+                    if (wallCount > 4) {
+                        newTiles[y][x] = { type: 'wall', passable: false };
+                    } else if (wallCount < 4) {
+                        newTiles[y][x] = { type: 'floor', passable: true };
+                    }
+                }
+            }
+
+            this.tiles = newTiles;
+        }
+    }
+
+    /**
+     * Compter les murs voisins
+     */
+    countNeighborWalls(x, y) {
+        let count = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                const nx = x + dx;
+                const ny = y + dy;
+                if (this.tiles[ny][nx].type === 'wall') {
+                    count++;
                 }
             }
         }
-        return false;
+        return count;
+    }
+
+    /**
+     * S'assurer qu'il y a une zone dégagée au spawn
+     */
+    ensureSpawnArea() {
+        const centerX = Math.floor(this.width / 2);
+        const centerY = Math.floor(this.height / 2);
+        const radius = 3;
+
+        for (let y = centerY - radius; y <= centerY + radius; y++) {
+            for (let x = centerX - radius; x <= centerX + radius; x++) {
+                if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
+                    this.tiles[y][x] = {
+                        type: 'floor',
+                        passable: true
+                    };
+                }
+            }
+        }
     }
 
     /**
