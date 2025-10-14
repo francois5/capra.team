@@ -76,7 +76,7 @@ class GameScene extends Phaser.Scene {
         this.createAnimations();
 
         // Générer le monde
-        this.world = new WorldGenerator(50, 50);
+        this.world = new WorldGenerator(20, 20);
         this.worldData = this.world.generate();
 
         // Container pour organiser les layers
@@ -227,36 +227,17 @@ class GameScene extends Phaser.Scene {
      * Créer le rat géant ennemi de départ (co-détenu à convertir)
      */
     createStartingAlly() {
-        const spawnPoint = this.world.getSpawnPoint();
+        const codetenuSpawn = this.world.getCodetenuSpawn();
 
-        // Trouver une position adjacent au joueur
-        const directions = [
-            [1, 0], [-1, 0], [0, 1], [0, -1],
-            [1, 1], [1, -1], [-1, 1], [-1, -1]
-        ];
-
-        let spawnX = spawnPoint.x;
-        let spawnY = spawnPoint.y;
-
-        for (const [dx, dy] of directions) {
-            const testX = spawnPoint.x + dx;
-            const testY = spawnPoint.y + dy;
-            if (this.world.isPassable(testX, testY)) {
-                spawnX = testX;
-                spawnY = testY;
-                break;
-            }
-        }
-
-        // Créer le rat ENNEMI (sans summoner)
-        const enemyRat = new GiantRat(this, spawnX, spawnY, this.worldOffset, null);
+        // Créer le rat ENNEMI (sans summoner) à la position du codétenu
+        const enemyRat = new GiantRat(this, codetenuSpawn.x, codetenuSpawn.y, this.worldOffset, null);
 
         // Le garder en tant qu'ennemi (team = 'enemy' par défaut)
         // Pas de tint orange, il reste gris
 
         this.giantRats.push(enemyRat);
 
-        console.log(`✅ Co-détenu (rat ennemi) créé à (${spawnX}, ${spawnY}) - À CONVERTIR`);
+        console.log(`✅ Co-détenu (rat ennemi) créé à (${codetenuSpawn.x}, ${codetenuSpawn.y}) - À CONVERTIR`);
         console.log(`📊 Monstres contrôlés: ${this.player.controlledMonsters}/${this.player.maxControlledMonsters}`);
     }
 
@@ -264,27 +245,12 @@ class GameScene extends Phaser.Scene {
      * Créer UN SEUL bélier noir dans une autre chambre
      */
     createSingleBlackRam() {
-        // Récupérer les régions de chambres depuis le WorldGenerator
-        if (!this.world.chambers || this.world.chambers.length < 2) {
-            console.log('⚠️ Pas assez de chambres trouvées pour spawner le bélier');
-            return;
-        }
+        const ramSpawn = this.world.getRamSpawn();
 
-        // Prendre la deuxième chambre (index 1, pas la chambre de spawn qui est index 0)
-        const chamber = this.world.chambers[1];
-
-        if (chamber.length > 0) {
-            const randomTile = chamber[Math.floor(Math.random() * chamber.length)];
-            const x = randomTile.x;
-            const y = randomTile.y;
-
-            // Vérifier que c'est passable
-            if (this.world.isPassable(x, y)) {
-                const ram = new BlackRam(this, x, y, this.worldOffset);
-                this.blackRams.push(ram);
-                console.log(`✅ Bélier Noir créé dans chambre 2 à (${x}, ${y})`);
-            }
-        }
+        // Créer le bélier à la position définie par le WorldGenerator
+        const ram = new BlackRam(this, ramSpawn.x, ramSpawn.y, this.worldOffset);
+        this.blackRams.push(ram);
+        console.log(`✅ Bélier Noir créé à (${ramSpawn.x}, ${ramSpawn.y})`);
     }
 
     /**

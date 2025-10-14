@@ -44,7 +44,8 @@ class WorldGenerator {
      */
     perlin2D(x, y) {
         // Utiliser une fonction de bruit simple basée sur le sinus
-        const scale = 0.1;
+        // Scale augmentée pour créer de plus petites caves
+        const scale = 0.3;
         const noise = Math.sin(x * scale + this.seed) * Math.cos(y * scale + this.seed);
         const noise2 = Math.sin((x + y) * scale * 0.5 + this.seed * 2) * 0.5;
         return (noise + noise2) / 1.5;
@@ -54,7 +55,7 @@ class WorldGenerator {
      * Créer des cavernes avec bruit de Perlin
      */
     createCavesWithPerlin() {
-        const threshold = 0.15; // Seuil pour décider si c'est sol ou mur
+        const threshold = 0.25; // Seuil augmenté pour créer de plus petites caves
 
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
@@ -90,7 +91,7 @@ class WorldGenerator {
      * Lisser les cavernes avec automate cellulaire
      */
     smoothCaves() {
-        const iterations = 2;
+        const iterations = 3; // Plus d'itérations pour des caves plus arrondies
 
         for (let i = 0; i < iterations; i++) {
             const newTiles = JSON.parse(JSON.stringify(this.tiles));
@@ -99,10 +100,10 @@ class WorldGenerator {
                 for (let x = 1; x < this.width - 1; x++) {
                     const wallCount = this.countNeighborWalls(x, y);
 
-                    // Règle d'automate cellulaire
-                    if (wallCount > 4) {
+                    // Règle d'automate cellulaire plus stricte pour des caves plus petites
+                    if (wallCount >= 5) {
                         newTiles[y][x] = { type: 'wall', passable: false };
-                    } else if (wallCount < 4) {
+                    } else if (wallCount <= 3) {
                         newTiles[y][x] = { type: 'floor', passable: true };
                     }
                 }
@@ -131,22 +132,112 @@ class WorldGenerator {
     }
 
     /**
-     * S'assurer qu'il y a une zone dégagée au spawn
+     * Trouver toutes les cavernes et placer le joueur, le codétenu et le bélier
      */
     ensureSpawnArea() {
-        const centerX = Math.floor(this.width / 2);
-        const centerY = Math.floor(this.height / 2);
-        const radius = 3;
+        // D'abord, trouver toutes les cavernes
+        const visited = new Set();
+        const caverns = [];
 
-        for (let y = centerY - radius; y <= centerY + radius; y++) {
-            for (let x = centerX - radius; x <= centerX + radius; x++) {
-                if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
-                    this.tiles[y][x] = {
-                        type: 'floor',
-                        passable: true
-                    };
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                const tile = this.tiles[y][x];
+                if (tile.type === 'floor' && !visited.has(`${x},${y}`)) {
+                    const region = this.floodFillRegion(x, y, visited);
+                    if (region.length >= 10) { // Petites cavernes (10+ tiles)
+                        caverns.push(region);
+                    }
                 }
             }
+        }
+
+        // Trier les cavernes par taille
+        caverns.sort((a, b) => b.length - a.length);
+
+        console.log(`🗺️ ${caverns.length} petites cavernes trouvées`);
+
+        if (caverns.length >= 2) {
+            // Cave 1: Joueur et codétenu
+            const playerCavern = caverns[0];
+            let sumX = 0, sumY = 0;
+            playerCavern.forEach(({x, y}) => {
+                sumX += x;
+                sumY += y;
+            });
+
+            this.spawnX = Math.floor(sumX / playerCavern.length);
+            this.spawnY = Math.floor(sumY / playerCavern.length);
+
+            // S'assurer qu'il y a de l'espace autour du spawn
+            const radius = 1;
+            for (let y = this.spawnY - radius; y <= this.spawnY + radius; y++) {
+                for (let x = this.spawnX - radius; x <= this.spawnX + radius; x++) {
+                    if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
+                        this.tiles[y][x] = {
+                            type: 'floor',
+                            passable: true
+                        };
+                    }
+                }
+            }
+
+            // Position du codétenu (à côté du joueur)
+            this.codetenuX = this.spawnX + 1;
+            this.codetenuY = this.spawnY;
+
+            console.log(`🏠 Joueur et codétenu dans caverne 1 à (${this.spawnX}, ${this.spawnY})`);
+
+            // Cave 2: Bélier noir
+            const ramCavern = caverns[1];
+            sumX = 0;
+            sumY = 0;
+            ramCavern.forEach(({x, y}) => {
+                sumX += x;
+                sumY += y;
+            });
+
+            this.ramX = Math.floor(sumX / ramCavern.length);
+            this.ramY = Math.floor(sumY / ramCavern.length);
+
+            console.log(`🐏 Bélier dans caverne 2 à (${this.ramX}, ${this.ramY})`);
+        } else if (caverns.length === 1) {
+            // Une seule caverne: tout le monde dedans
+            const cavern = caverns[0];
+            let sumX = 0, sumY = 0;
+            cavern.forEach(({x, y}) => {
+                sumX += x;
+                sumY += y;
+            });
+
+            this.spawnX = Math.floor(sumX / cavern.length);
+            this.spawnY = Math.floor(sumY / cavern.length);
+            this.codetenuX = this.spawnX + 1;
+            this.codetenuY = this.spawnY;
+            this.ramX = this.spawnX + 2;
+            this.ramY = this.spawnY;
+
+            console.log(`🏠 Une seule caverne, tout le monde à (${this.spawnX}, ${this.spawnY})`);
+        } else {
+            // Fallback: créer une caverne au centre
+            this.spawnX = Math.floor(this.width / 2);
+            this.spawnY = Math.floor(this.height / 2);
+            this.codetenuX = this.spawnX + 1;
+            this.codetenuY = this.spawnY;
+            this.ramX = this.spawnX + 2;
+            this.ramY = this.spawnY;
+
+            const radius = 3;
+            for (let y = this.spawnY - radius; y <= this.spawnY + radius; y++) {
+                for (let x = this.spawnX - radius; x <= this.spawnX + radius; x++) {
+                    if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
+                        this.tiles[y][x] = {
+                            type: 'floor',
+                            passable: true
+                        };
+                    }
+                }
+            }
+            console.log(`🏠 Aucune caverne, spawn au centre (${this.spawnX}, ${this.spawnY})`);
         }
     }
 
@@ -175,13 +266,35 @@ class WorldGenerator {
     }
 
     /**
-     * Obtenir un point de spawn valide (au centre)
+     * Obtenir un point de spawn valide (dans une caverne aléatoire)
      * @returns {{x: number, y: number}}
      */
     getSpawnPoint() {
         return {
-            x: Math.floor(this.width / 2),
-            y: Math.floor(this.height / 2)
+            x: this.spawnX || Math.floor(this.width / 2),
+            y: this.spawnY || Math.floor(this.height / 2)
+        };
+    }
+
+    /**
+     * Obtenir la position du codétenu
+     * @returns {{x: number, y: number}}
+     */
+    getCodetenuSpawn() {
+        return {
+            x: this.codetenuX || Math.floor(this.width / 2) + 1,
+            y: this.codetenuY || Math.floor(this.height / 2)
+        };
+    }
+
+    /**
+     * Obtenir la position du bélier noir
+     * @returns {{x: number, y: number}}
+     */
+    getRamSpawn() {
+        return {
+            x: this.ramX || Math.floor(this.width / 2) + 2,
+            y: this.ramY || Math.floor(this.height / 2)
         };
     }
 

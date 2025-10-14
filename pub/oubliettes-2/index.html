@@ -54,16 +54,44 @@
             bottom: 10px;
             right: 10px;
             color: #f4a460;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
             border-radius: 5px;
-            font-size: 12px;
+            font-size: 13px;
             z-index: 100;
+            border: 2px solid #ff9800;
+            min-width: 280px;
         }
 
         .controls h3 {
-            margin-bottom: 5px;
+            margin-bottom: 10px;
             color: #ff9800;
+            text-align: center;
+            font-size: 16px;
+            border-bottom: 1px solid #ff9800;
+            padding-bottom: 5px;
+        }
+
+        .controls p {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+
+        .controls .section {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #555;
+        }
+
+        .controls .key {
+            display: inline-block;
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #666;
+            font-weight: bold;
+            color: #ffd700;
+            margin-right: 5px;
         }
 
         #monsterCounter {
@@ -94,10 +122,20 @@
     <div id="monsterCounter">0/1</div>
 
     <div class="controls">
-        <h3>Contrôles</h3>
-        <p>ZQSD / Flèches : Déplacement</p>
-        <p>+/- : Zoom</p>
-        <p>Espace : Action</p>
+        <h3>⌨️ COMMANDES</h3>
+
+        <p><span class="key">ZQSD</span> <span class="key">↑←↓→</span> Déplacement</p>
+        <p><span class="key">Espace</span> Action</p>
+
+        <div class="section">
+            <p><span class="key">C</span> Rayon de conversion (maintenir)</p>
+            <p><span class="key">H</span> Sort de guérison (clic)</p>
+            <p><span class="key">Clic</span> Creuser un mur</p>
+        </div>
+
+        <div class="section">
+            <p><span class="key">+</span> <span class="key">-</span> Zoom</p>
+        </div>
     </div>
 
     <!-- Phaser 3 -->
@@ -105,7 +143,7 @@
 
     <!-- Scripts du jeu -->
     <script src="js/utils/IsoUtils.js?v=2"></script>
-    <script src="js/world/WorldGenerator.js?v=5"></script>
+    <script src="js/world/WorldGenerator.js?v=7"></script>
     <script src="js/world/TaskManager.js?v=3"></script>
     <script src="js/entities/Player.js?v=63"></script>
     <script src="js/entities/Enemy.js?v=30"></script>
@@ -117,7 +155,7 @@
     <script src="js/ui/HealthManaBar.js?v=36"></script>
     <script src="js/scenes/BootScene.js?v=2"></script>
     <script src="js/scenes/PreloadScene.js?v=5"></script>
-    <script src="js/scenes/GameScene.js?v=54"></script>
+    <script src="js/scenes/GameScene.js?v=57"></script>
     <script src="js/game.js?v=3"></script>
 
     <script>
