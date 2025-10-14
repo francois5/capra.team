@@ -1101,7 +1101,7 @@ class GameScene extends Phaser.Scene {
             entities.push(...this.workers.filter(w => w.state !== 'dead'));
         }
 
-        // Réinitialiser l'alpha et la profondeur de tous les murs
+        // Réinitialiser l'alpha de tous les murs et entités
         this.tileSprites.forEach(tileData => {
             if (tileData.tile.type === 'wall') {
                 tileData.sprite.setAlpha(1);
@@ -1111,12 +1111,24 @@ class GameScene extends Phaser.Scene {
             }
         });
 
-        // Pour chaque entité, rendre transparents les murs qui la cachent
+        // Réinitialiser l'alpha de toutes les entités
         entities.forEach(entity => {
+            entity.setAlpha(1);
+            // Réinitialiser les barres de santé/loyauté aussi
+            if (entity.healthBar) entity.healthBar.setAlpha(1);
+            if (entity.healthBarBg) entity.healthBarBg.setAlpha(1);
+            if (entity.loyaltyBar) entity.loyaltyBar.setAlpha(1);
+            if (entity.loyaltyBarBg) entity.loyaltyBarBg.setAlpha(1);
+            if (entity.manaBar) entity.manaBar.setAlpha(1);
+            if (entity.manaBarBg) entity.manaBarBg.setAlpha(1);
+        });
+
+        // Pour chaque entité, vérifier si elle est cachée par un mur
+        entities.forEach(entity => {
+            let isHiddenByWall = false;
+
             // Vérifier les murs autour et devant l'entité (dans la direction iso)
             const checkPositions = [
-                // Position de l'entité elle-même
-                { x: entity.cartX, y: entity.cartY },
                 // Positions "devant" en coordonnées isométriques (vers la caméra)
                 { x: entity.cartX - 1, y: entity.cartY },
                 { x: entity.cartX, y: entity.cartY - 1 },
@@ -1130,14 +1142,26 @@ class GameScene extends Phaser.Scene {
                     const wallDepth = IsoUtils.getDepth(pos.x, pos.y);
                     const entityDepth = IsoUtils.getDepth(entity.cartX, entity.cartY);
 
-                    // Si le mur est "devant" l'entité en profondeur iso, le rendre transparent
+                    // Si le mur est "devant" l'entité en profondeur iso
                     if (wallDepth >= entityDepth) {
+                        isHiddenByWall = true;
+                        // Rendre le mur semi-transparent
                         tileData.sprite.setAlpha(0.3);
-                        // Mettre le mur transparent DERRIÈRE l'entité pour qu'elle soit visible
-                        tileData.sprite.setDepth(entityDepth - 0.1);
                     }
                 }
             });
+
+            // Si l'entité est cachée, la rendre semi-transparente mais visible
+            if (isHiddenByWall) {
+                entity.setAlpha(0.5);
+                // Rendre les barres aussi semi-transparentes
+                if (entity.healthBar) entity.healthBar.setAlpha(0.5);
+                if (entity.healthBarBg) entity.healthBarBg.setAlpha(0.5);
+                if (entity.loyaltyBar) entity.loyaltyBar.setAlpha(0.5);
+                if (entity.loyaltyBarBg) entity.loyaltyBarBg.setAlpha(0.5);
+                if (entity.manaBar) entity.manaBar.setAlpha(0.5);
+                if (entity.manaBarBg) entity.manaBarBg.setAlpha(0.5);
+            }
         });
     }
 }
