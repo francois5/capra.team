@@ -1101,10 +1101,11 @@ class GameScene extends Phaser.Scene {
             entities.push(...this.workers.filter(w => w.state !== 'dead'));
         }
 
-        // Réinitialiser l'alpha de tous les murs et entités
+        // Réinitialiser tous les murs (alpha 1, visible)
         this.tileSprites.forEach(tileData => {
             if (tileData.tile.type === 'wall') {
                 tileData.sprite.setAlpha(1);
+                tileData.sprite.setVisible(true);
                 // Profondeur normale pour les murs opaques (au-dessus des entités)
                 const depth = IsoUtils.getDepth(tileData.cartX, tileData.cartY);
                 tileData.sprite.setDepth(depth + 0.5);
@@ -1123,12 +1124,12 @@ class GameScene extends Phaser.Scene {
             if (entity.manaBarBg) entity.manaBarBg.setAlpha(1);
         });
 
-        // Pour chaque entité, vérifier si elle est cachée par un mur
+        // Pour chaque entité, masquer les murs qui la cachent (effet cutout)
         entities.forEach(entity => {
-            let isHiddenByWall = false;
-
             // Vérifier les murs autour et devant l'entité (dans la direction iso)
             const checkPositions = [
+                // Position de l'entité elle-même
+                { x: entity.cartX, y: entity.cartY },
                 // Positions "devant" en coordonnées isométriques (vers la caméra)
                 { x: entity.cartX - 1, y: entity.cartY },
                 { x: entity.cartX, y: entity.cartY - 1 },
@@ -1142,26 +1143,16 @@ class GameScene extends Phaser.Scene {
                     const wallDepth = IsoUtils.getDepth(pos.x, pos.y);
                     const entityDepth = IsoUtils.getDepth(entity.cartX, entity.cartY);
 
-                    // Si le mur est "devant" l'entité en profondeur iso
+                    // Si le mur est "devant" l'entité en profondeur iso, le masquer (cutout)
                     if (wallDepth >= entityDepth) {
-                        isHiddenByWall = true;
-                        // Rendre le mur semi-transparent
-                        tileData.sprite.setAlpha(0.3);
+                        // Option 1: Rendre invisible (cutout complet)
+                        tileData.sprite.setVisible(false);
+
+                        // Option 2: Ou rendre très transparent (effet fantôme)
+                        // tileData.sprite.setAlpha(0.15);
                     }
                 }
             });
-
-            // Si l'entité est cachée, la rendre semi-transparente mais visible
-            if (isHiddenByWall) {
-                entity.setAlpha(0.5);
-                // Rendre les barres aussi semi-transparentes
-                if (entity.healthBar) entity.healthBar.setAlpha(0.5);
-                if (entity.healthBarBg) entity.healthBarBg.setAlpha(0.5);
-                if (entity.loyaltyBar) entity.loyaltyBar.setAlpha(0.5);
-                if (entity.loyaltyBarBg) entity.loyaltyBarBg.setAlpha(0.5);
-                if (entity.manaBar) entity.manaBar.setAlpha(0.5);
-                if (entity.manaBarBg) entity.manaBarBg.setAlpha(0.5);
-            }
         });
     }
 }
