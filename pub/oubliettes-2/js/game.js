@@ -9,7 +9,7 @@ const config = {
         default: 'arcade',
         arcade: {
             gravity: { y: 0 },
-            debug: false // Mode debug désactivé
+            debug: true // Mode debug activé pour voir les erreurs
         }
     },
     scene: [BootScene, PreloadScene, GameScene],

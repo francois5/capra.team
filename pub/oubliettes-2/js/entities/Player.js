@@ -39,6 +39,22 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         // Référence à la scène
         this.scene = scene;
 
+        // Système de tâches
+        this.currentTask = null;
+        this.state = 'idle'; // idle, moving_to_task, digging
+
+        // Stats du héros
+        this.maxHp = 100;
+        this.hp = 100;
+        this.maxMana = 50;
+        this.mana = 50;
+        this.manaRegenRate = 5; // Régénération de 5 mana par seconde
+        this.hpRegenRate = 1; // Régénération de 1 HP par seconde (lente)
+
+        // Système de contrôle des monstres
+        this.controlledMonsters = 0; // Nombre actuel de monstres contrôlés
+        this.maxControlledMonsters = 1; // Limite de départ (augmente en convertissant des béliers)
+
         // Contrôles AZERTY (ZQSD)
         this.keys = {
             Z: scene.input.keyboard.addKey('Z'),
@@ -58,6 +74,10 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         // Mettre à jour le z-ordering initial
         this.updateDepth();
 
+        // Créer les barres au-dessus du héros (mana en haut, vie en bas)
+        this.createManaBar();
+        this.createHealthBar();
+
         console.log(`Player créé à (${cartX}, ${cartY})`);
     }
 
@@ -76,15 +96,162 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
-    update() {
-        if (this.isMoving) {
-            this.updateMovement();
-        } else {
-            this.handleInput();
+    /**
+     * Créer la barre de mana en haut (comme la loyauté chez les monstres)
+     */
+    createManaBar() {
+        const barWidth = 40;
+        const barHeight = 5;
+
+        // Fond de la barre
+        this.manaBarBg = this.scene.add.rectangle(
+            this.x,
+            this.y - 50,
+            barWidth,
+            barHeight,
+            0x333333
+        );
+        this.manaBarBg.setOrigin(0.5, 0.5);
+
+        // Barre de mana (bleue)
+        this.manaBar = this.scene.add.rectangle(
+            this.x - barWidth / 2 + 1,
+            this.y - 50,
+            barWidth - 2,
+            barHeight - 2,
+            0x00aaff
+        );
+        this.manaBar.setOrigin(0, 0.5);
+
+        this.maxManaBarWidth = barWidth - 2;
+    }
+
+    /**
+     * Créer la barre de vie en bas
+     */
+    createHealthBar() {
+        const barWidth = 40;
+        const barHeight = 5;
+
+        // Fond de la barre
+        this.healthBarBg = this.scene.add.rectangle(
+            this.x,
+            this.y - 44,
+            barWidth,
+            barHeight,
+            0x333333
+        );
+        this.healthBarBg.setOrigin(0.5, 0.5);
+
+        // Barre de vie (rouge)
+        this.healthBar = this.scene.add.rectangle(
+            this.x - barWidth / 2 + 1,
+            this.y - 44,
+            barWidth - 2,
+            barHeight - 2,
+            0xff0000
+        );
+        this.healthBar.setOrigin(0, 0.5);
+
+        this.maxHealthBarWidth = barWidth - 2;
+    }
+
+    /**
+     * Mettre à jour les barres de vie et mana
+     */
+    updatePlayerBars() {
+        // Barre de mana (en haut)
+        if (this.manaBar && this.manaBarBg) {
+            const manaPercent = Math.max(0, this.mana / this.maxMana);
+            this.manaBar.width = this.maxManaBarWidth * manaPercent;
+
+            // Position de la barre (suit le héros)
+            const screenY = this.y - 50;
+            this.manaBarBg.setPosition(this.x, screenY);
+            this.manaBar.setPosition(this.x - this.maxManaBarWidth / 2, screenY);
+
+            // Depth
+            this.manaBarBg.setDepth(this.depth + 0.01);
+            this.manaBar.setDepth(this.depth + 0.02);
+        }
+
+        // Barre de vie (en bas)
+        if (this.healthBar && this.healthBarBg) {
+            const healthPercent = Math.max(0, this.hp / this.maxHp);
+            this.healthBar.width = this.maxHealthBarWidth * healthPercent;
+
+            // Position de la barre (suit le héros)
+            const screenY = this.y - 44;
+            this.healthBarBg.setPosition(this.x, screenY);
+            this.healthBar.setPosition(this.x - this.maxHealthBarWidth / 2, screenY);
+
+            // Depth
+            this.healthBarBg.setDepth(this.depth + 0.01);
+            this.healthBar.setDepth(this.depth + 0.02);
+        }
+    }
+
+    update(time, delta) {
+        // Régénération de la mana et de la vie
+        this.regenerateMana(delta);
+        this.regenerateHealth(delta);
+
+        // Gérer les états du player
+        switch (this.state) {
+            case 'idle':
+                // Contrôle manuel ou chercher une tâche
+                if (this.isMoving) {
+                    this.updateMovement();
+                } else {
+                    this.handleInput();
+                    // Si pas de mouvement manuel, chercher une tâche
+                    if (!this.isMoving) {
+                        this.lookForTask();
+                    }
+                }
+                break;
+            case 'moving_to_task':
+                // Se déplacer vers la tâche
+                if (this.isMoving) {
+                    this.updateMovement();
+                } else {
+                    this.moveToTask();
+                }
+                break;
+            case 'digging':
+                // En train de creuser, rien à faire (timer en cours)
+                break;
         }
 
         // Mettre à jour l'affichage debug
         this.updateDebugInfo();
+
+        // Mettre à jour les barres de vie/mana
+        this.updatePlayerBars();
+    }
+
+    /**
+     * Régénérer la mana
+     * @param {number} delta - Temps écoulé en ms
+     */
+    regenerateMana(delta) {
+        if (this.mana < this.maxMana) {
+            // Régénérer la mana proportionnellement au temps écoulé
+            const manaRegen = (this.manaRegenRate * delta) / 1000;
+            this.mana = Math.min(this.mana + manaRegen, this.maxMana);
+        }
+    }
+
+    /**
+     * Régénérer la vie lentement
+     * @param {number} delta - Temps écoulé en ms
+     */
+    regenerateHealth(delta) {
+        if (this.hp < this.maxHp) {
+            // Régénérer la vie proportionnellement au temps écoulé
+            const hpRegen = (this.hpRegenRate * delta) / 1000;
+            this.hp = Math.min(this.hp + hpRegen, this.maxHp);
+        }
     }
 
     /**
@@ -208,7 +375,133 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     updateDebugInfo() {
         const posElement = document.getElementById('pos');
         if (posElement) {
-            posElement.textContent = `(${this.cartX}, ${this.cartY})`;
+            posElement.textContent = `(${this.cartX}, ${this.cartY}) - ${this.state}`;
+        }
+    }
+
+    /**
+     * Chercher une tâche non assignée
+     */
+    lookForTask() {
+        if (!this.scene.taskManager) return;
+
+        const task = this.scene.taskManager.getUnassignedTask();
+        if (task) {
+            this.currentTask = task;
+            this.scene.taskManager.assignTask(task, this);
+            this.state = 'moving_to_task';
+            console.log(`Héros va creuser en (${task.x}, ${task.y})`);
+        }
+    }
+
+    /**
+     * Se déplacer vers la tâche
+     */
+    moveToTask() {
+        if (!this.currentTask) {
+            this.state = 'idle';
+            return;
+        }
+
+        const targetX = this.currentTask.x;
+        const targetY = this.currentTask.y;
+
+        // Calculer la distance
+        const dx = targetX - this.cartX;
+        const dy = targetY - this.cartY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Si on est adjacent, commencer à creuser
+        if (distance <= 1.5) {
+            this.startDigging();
+            return;
+        }
+
+        // Déterminer la prochaine case à atteindre
+        let nextX = this.cartX;
+        let nextY = this.cartY;
+
+        if (Math.abs(dx) > Math.abs(dy)) {
+            // Bouger en X
+            nextX = this.cartX + (dx > 0 ? 1 : -1);
+        } else {
+            // Bouger en Y
+            nextY = this.cartY + (dy > 0 ? 1 : -1);
+        }
+
+        // Vérifier si c'est passable
+        if (this.scene.world.isPassable(nextX, nextY)) {
+            this.startMoveTo(nextX, nextY);
+        } else {
+            // Bloqué, essayer l'autre axe
+            if (Math.abs(dx) > Math.abs(dy)) {
+                nextX = this.cartX;
+                nextY = this.cartY + (dy > 0 ? 1 : -1);
+            } else {
+                nextX = this.cartX + (dx > 0 ? 1 : -1);
+                nextY = this.cartY;
+            }
+
+            if (this.scene.world.isPassable(nextX, nextY)) {
+                this.startMoveTo(nextX, nextY);
+            } else {
+                // Impossible de se déplacer, supprimer définitivement la tâche
+                console.log(`⚠️ Impossible d'atteindre le mur en (${this.currentTask.x}, ${this.currentTask.y}) - tâche supprimée`);
+                this.scene.taskManager.removeTask(this.currentTask);
+                this.currentTask = null;
+                this.state = 'idle';
+            }
+        }
+    }
+
+    /**
+     * Commencer à creuser
+     */
+    startDigging() {
+        this.state = 'digging';
+        console.log(`Héros commence à creuser en (${this.currentTask.x}, ${this.currentTask.y})`);
+
+        // Simuler le temps de creusage (2 secondes)
+        this.scene.time.delayedCall(2000, () => {
+            this.finishDigging();
+        });
+    }
+
+    /**
+     * Finir de creuser
+     */
+    finishDigging() {
+        if (!this.currentTask) return;
+
+        // Creuser le mur
+        this.scene.digWall(this.currentTask.x, this.currentTask.y);
+
+        // Compléter la tâche
+        this.scene.taskManager.completeTask(this.currentTask);
+        this.currentTask = null;
+        this.state = 'idle';
+
+        console.log('Héros a fini de creuser');
+    }
+
+    /**
+     * Prendre des dégâts
+     * @param {number} amount - Montant des dégâts
+     */
+    takeDamage(amount) {
+        this.hp = Math.max(0, this.hp - amount);
+        console.log(`❤️ Héros prend ${amount} dégâts (${this.hp}/${this.maxHp})`);
+
+        // Flash rouge
+        this.setTint(0xff0000);
+        this.scene.time.delayedCall(100, () => {
+            this.clearTint();
+        });
+
+        // Si mort
+        if (this.hp <= 0) {
+            console.log('💀 Héros mort!');
+            // TODO: Game over
         }
     }
 }

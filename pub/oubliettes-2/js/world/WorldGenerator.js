@@ -7,6 +7,7 @@ class WorldGenerator {
         this.width = width;
         this.height = height;
         this.tiles = [];
+        this.chambers = []; // Liste des chambres (régions)
     }
 
     /**
@@ -17,6 +18,7 @@ class WorldGenerator {
         this.initializeTiles();
         this.createChambers();
         this.addWalls();
+        this.assignTerritories();
         return this.tiles;
     }
 
@@ -159,5 +161,89 @@ class WorldGenerator {
             x: Math.floor(this.width / 2),
             y: Math.floor(this.height / 2)
         };
+    }
+
+    /**
+     * Assigner des territoires aux oubliettes
+     * Chaque zone peut être : void (vide), black_goat (chèvre noire), light (lumière)
+     */
+    assignTerritories() {
+        // Trouver toutes les chambres
+        const visited = new Set();
+
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                const tile = this.tiles[y][x];
+                if (tile.type === 'floor' && !visited.has(`${x},${y}`)) {
+                    // Flood fill pour trouver toute la région connectée
+                    const region = this.floodFillRegion(x, y, visited);
+                    if (region.length > 3) { // Ignorer les toutes petites régions
+                        this.chambers.push(region);
+                    }
+                }
+            }
+        }
+
+        console.log(`🗺️ ${this.chambers.length} régions trouvées`);
+
+        // Assigner des territoires aléatoirement aux chambres
+        const territories = ['void', 'black_goat', 'light'];
+
+        this.chambers.forEach((region, index) => {
+            // Distribuer équitablement les territoires
+            let territory;
+            if (index === 0) {
+                // La première chambre (centrale) est toujours vide (spawn du joueur)
+                territory = 'void';
+            } else {
+                // Alterner entre chèvre noire et lumière pour les autres
+                territory = (index % 2 === 0) ? 'black_goat' : 'light';
+            }
+
+            // Assigner le territoire à toutes les tiles de la région
+            region.forEach(({x, y}) => {
+                this.tiles[y][x].territory = territory;
+            });
+
+            console.log(`✅ Région ${index + 1}: ${territory} (${region.length} tiles)`);
+        });
+    }
+
+    /**
+     * Flood fill pour trouver une région connectée
+     * @param {number} startX
+     * @param {number} startY
+     * @param {Set} visited
+     * @returns {Array} Liste de {x, y}
+     */
+    floodFillRegion(startX, startY, visited) {
+        const region = [];
+        const queue = [{x: startX, y: startY}];
+        visited.add(`${startX},${startY}`);
+
+        while (queue.length > 0) {
+            const {x, y} = queue.shift();
+
+            // Vérifier que c'est bien du sol
+            if (this.tiles[y][x].type !== 'floor') continue;
+
+            region.push({x, y});
+
+            // Explorer les 4 voisins
+            const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+            for (const [dx, dy] of directions) {
+                const nx = x + dx;
+                const ny = y + dy;
+                const key = `${nx},${ny}`;
+
+                if (nx >= 0 && ny >= 0 && nx < this.width && ny < this.height &&
+                    !visited.has(key) && this.tiles[ny][nx].type === 'floor') {
+                    visited.add(key);
+                    queue.push({x: nx, y: ny});
+                }
+            }
+        }
+
+        return region;
     }
 }

@@ -36,11 +36,11 @@ class PreloadScene extends Phaser.Scene {
     }
 
     createIsoTiles() {
-        // Cube isométrique parfait (1m³)
-        // Pour un vrai cube, la hauteur doit être = tileWidth / 2
-        const tileWidth = 64;   // Largeur du losange
+        // Cube isométrique 1m³ (comme Dungeon Keeper)
+        // Base 1m x 1m, hauteur 1m
+        const tileWidth = 64;   // Largeur du losange (base 1m x 1m)
         const tileHeight = 32;  // Hauteur du losange (tileWidth / 2)
-        const cubeHeight = 64;  // Hauteur du cube = tileWidth pour un cube parfait 1m³
+        const cubeHeight = 64;  // Hauteur du cube = 1m = tileWidth
 
         // Sol (losange plat - vue du dessus d'un cube)
         const floorCanvas = document.createElement('canvas');
@@ -68,31 +68,33 @@ class PreloadScene extends Phaser.Scene {
         // Mur (cube isométrique parfait avec 3 faces visibles)
         const wallCanvas = document.createElement('canvas');
         wallCanvas.width = tileWidth;
-        wallCanvas.height = tileHeight + cubeHeight;
+        wallCanvas.height = cubeHeight + tileHeight;
         const wallCtx = wallCanvas.getContext('2d');
 
         // Face GAUCHE (côté ombre) - Parallélogramme
+        // Part du coin gauche du losange du haut et descend de cubeHeight
         wallCtx.fillStyle = '#3a2818';
         wallCtx.strokeStyle = '#2a1808';
         wallCtx.lineWidth = 1;
         wallCtx.beginPath();
-        wallCtx.moveTo(0, tileHeight / 2);               // Bas gauche
-        wallCtx.lineTo(0, tileHeight / 2 + cubeHeight);  // Haut gauche (sur l'écran = bas)
-        wallCtx.lineTo(tileWidth / 2, tileHeight + cubeHeight);  // Haut milieu
-        wallCtx.lineTo(tileWidth / 2, tileHeight);       // Bas milieu
+        wallCtx.moveTo(0, tileHeight / 2);                    // Coin gauche du losange
+        wallCtx.lineTo(tileWidth / 2, tileHeight);            // Coin bas du losange
+        wallCtx.lineTo(tileWidth / 2, tileHeight + cubeHeight); // Descend de 128px
+        wallCtx.lineTo(0, tileHeight / 2 + cubeHeight);       // Coin bas-gauche du cube
         wallCtx.closePath();
         wallCtx.fill();
         wallCtx.stroke();
 
         // Face DROITE (côté lumière) - Parallélogramme
+        // Part du coin droit du losange du haut et descend de cubeHeight
         wallCtx.fillStyle = '#5a4838';
         wallCtx.strokeStyle = '#4a3828';
         wallCtx.lineWidth = 1;
         wallCtx.beginPath();
-        wallCtx.moveTo(tileWidth / 2, tileHeight);           // Bas milieu
-        wallCtx.lineTo(tileWidth / 2, tileHeight + cubeHeight);  // Haut milieu
-        wallCtx.lineTo(tileWidth, tileHeight / 2 + cubeHeight);  // Haut droit
-        wallCtx.lineTo(tileWidth, tileHeight / 2);           // Bas droit
+        wallCtx.moveTo(tileWidth, tileHeight / 2);            // Coin droit du losange
+        wallCtx.lineTo(tileWidth / 2, tileHeight);            // Coin bas du losange
+        wallCtx.lineTo(tileWidth / 2, tileHeight + cubeHeight); // Descend de 128px
+        wallCtx.lineTo(tileWidth, tileHeight / 2 + cubeHeight); // Coin bas-droit du cube
         wallCtx.closePath();
         wallCtx.fill();
         wallCtx.stroke();
@@ -102,17 +104,17 @@ class PreloadScene extends Phaser.Scene {
         wallCtx.strokeStyle = '#5a4838';
         wallCtx.lineWidth = 1;
         wallCtx.beginPath();
-        wallCtx.moveTo(tileWidth / 2, 0);                    // Haut
-        wallCtx.lineTo(tileWidth, tileHeight / 2);           // Droite
-        wallCtx.lineTo(tileWidth / 2, tileHeight);           // Bas
-        wallCtx.lineTo(0, tileHeight / 2);                   // Gauche
+        wallCtx.moveTo(tileWidth / 2, 0);                    // Sommet du cube
+        wallCtx.lineTo(tileWidth, tileHeight / 2);           // Coin droit
+        wallCtx.lineTo(tileWidth / 2, tileHeight);           // Coin bas
+        wallCtx.lineTo(0, tileHeight / 2);                   // Coin gauche
         wallCtx.closePath();
         wallCtx.fill();
         wallCtx.stroke();
 
         this.textures.addCanvas('iso-wall', wallCanvas);
 
-        console.log('✅ Cubes isométriques parfaits créés (1m³)');
+        console.log('✅ Cubes isométriques créés (1m³, style Dungeon Keeper)');
     }
 
     createPlayerSprite() {
@@ -123,7 +125,41 @@ class PreloadScene extends Phaser.Scene {
             frameHeight: 262  // 1048 / 4 rangées
         });
 
-        console.log('✅ Hero spritesheet chargé');
+        // Charger le spritesheet du bélier noir
+        // Spritesheet 4x4 = 16 frames (1024x1024 px total)
+        this.load.spritesheet('black-ram-idle', 'assets/sprites/black-ram/black-sheep-256px-16.png', {
+            frameWidth: 256,  // 1024 / 4 colonnes
+            frameHeight: 256  // 1024 / 4 rangées
+        });
+
+        // Charger les spritesheets des rats géants
+        // Tous en 4x4 = 16 frames (1024x1024 px total)
+        this.load.spritesheet('rat-idle', 'assets/sprites/giant-rat/idle-256px-16.png', {
+            frameWidth: 256,
+            frameHeight: 256
+        });
+
+        this.load.spritesheet('rat-walk-left', 'assets/sprites/giant-rat/walk-left-giant-rat-256px-16.png', {
+            frameWidth: 256,
+            frameHeight: 256
+        });
+
+        this.load.spritesheet('rat-walk-right', 'assets/sprites/giant-rat/walk-right-giant-rat-256px-16.png', {
+            frameWidth: 256,
+            frameHeight: 256
+        });
+
+        this.load.spritesheet('rat-attack-left', 'assets/sprites/giant-rat/attaque-left-256px-16.png', {
+            frameWidth: 256,
+            frameHeight: 256
+        });
+
+        this.load.spritesheet('rat-attack-right', 'assets/sprites/giant-rat/attaque-right-256px-16.png', {
+            frameWidth: 256,
+            frameHeight: 256
+        });
+
+        console.log('✅ Hero, Black Ram et Giant Rat spritesheets chargés');
     }
 
     create() {
