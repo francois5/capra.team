@@ -53,28 +53,13 @@ class HealthManaBar {
 
         this.maxBarWidth = barWidth - 4;
 
-        // Affichage du nombre de fidèles avec fond
-        const controlY = startY + (barHeight + 5) * 2 + 10;
-
-        // DEBUG: Fond rouge vif pour voir si c'est rendu
-        this.controlBg = scene.add.rectangle(padding, controlY, 100, 40, 0xff0000, 1.0)
-            .setOrigin(0, 0)
-            .setScrollFactor(0)
-            .setDepth(20000);
-
-        this.controlText = scene.add.text(padding + 50, controlY + 20, 'TEST 0/1', {
-            fontSize: '24px',
-            color: '#ffffff',
-            fontStyle: 'bold',
-            backgroundColor: '#000000',
-            padding: { x: 5, y: 5 }
-        })
-            .setOrigin(0.5, 0.5)
-            .setScrollFactor(0)
-            .setDepth(20001);
-
-        console.log(`🔍 controlBg created at (${padding}, ${controlY}) with size 100x40`);
-        console.log(`🔍 controlText created at (${padding + 50}, ${controlY + 20})`);
+        // Utiliser l'élément HTML pour afficher le compteur
+        this.monsterCounterElement = document.getElementById('monsterCounter');
+        if (this.monsterCounterElement) {
+            console.log('✅ Monster counter HTML element trouvé');
+        } else {
+            console.error('❌ Monster counter HTML element NOT FOUND!');
+        }
 
         console.log('✅ Barres de vie/mana créées');
         console.log(`HP Bar position: (${padding}, ${startY})`);
@@ -92,19 +77,9 @@ class HealthManaBar {
         this.manaBar.width = this.maxBarWidth * manaPercent;
         this.manaText.setText(`${Math.floor(mana)} / ${maxMana}`);
 
-        // Mettre à jour l'affichage des fidèles
-        if (this.controlText) {
-            const text = `${controlledMonsters}/${maxControlledMonsters}`;
-            this.controlText.setText(text);
-            // Debug pour vérifier
-            if (!this.controlText._debugLogged) {
-                console.log(`🔍 Monster counter text set to: "${text}"`);
-                console.log(`🔍 controlText position: (${this.controlText.x}, ${this.controlText.y})`);
-                console.log(`🔍 controlText visible: ${this.controlText.visible}, alpha: ${this.controlText.alpha}, depth: ${this.controlText.depth}`);
-                this.controlText._debugLogged = true;
-            }
-        } else {
-            console.warn('⚠️ controlText is null or undefined!');
+        // Mettre à jour le compteur HTML
+        if (this.monsterCounterElement) {
+            this.monsterCounterElement.textContent = `${controlledMonsters}/${maxControlledMonsters}`;
         }
     }
 }

@@ -65,6 +65,20 @@
             margin-bottom: 5px;
             color: #ff9800;
         }
+
+        #monsterCounter {
+            position: fixed;
+            top: 80px;
+            left: 10px;
+            color: #ffd700;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 10000;
+            border: 2px solid #ffd700;
+        }
     </style>
 </head>
 <body>
@@ -76,6 +90,8 @@
         <strong>Oubliettes 2 - Isométrique</strong><br>
         Position: <span id="pos">0, 0</span>
     </div>
+
+    <div id="monsterCounter">0/1</div>
 
     <div class="controls">
         <h3>Contrôles</h3>
@@ -98,7 +114,7 @@
     <script src="js/entities/GiantRat.js?v=19"></script>
     <script src="js/effects/LightningEffect.js?v=5"></script>
     <script src="js/ui/ToolBar.js?v=7"></script>
-    <script src="js/ui/HealthManaBar.js?v=35"></script>
+    <script src="js/ui/HealthManaBar.js?v=36"></script>
     <script src="js/scenes/BootScene.js?v=2"></script>
     <script src="js/scenes/PreloadScene.js?v=5"></script>
     <script src="js/scenes/GameScene.js?v=50"></script>
