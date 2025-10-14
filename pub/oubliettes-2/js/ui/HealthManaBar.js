@@ -56,20 +56,25 @@ class HealthManaBar {
         // Affichage du nombre de fidèles avec fond
         const controlY = startY + (barHeight + 5) * 2 + 10;
 
-        // Fond noir pour le compteur
-        this.controlBg = scene.add.rectangle(padding, controlY, 60, 25, 0x000000, 0.8)
+        // DEBUG: Fond rouge vif pour voir si c'est rendu
+        this.controlBg = scene.add.rectangle(padding, controlY, 100, 40, 0xff0000, 1.0)
             .setOrigin(0, 0)
             .setScrollFactor(0)
-            .setDepth(10001);
+            .setDepth(20000);
 
-        this.controlText = scene.add.text(padding + 30, controlY + 12, '0/1', {
-            fontSize: '20px',
-            color: '#ffd700',
-            fontStyle: 'bold'
+        this.controlText = scene.add.text(padding + 50, controlY + 20, 'TEST 0/1', {
+            fontSize: '24px',
+            color: '#ffffff',
+            fontStyle: 'bold',
+            backgroundColor: '#000000',
+            padding: { x: 5, y: 5 }
         })
             .setOrigin(0.5, 0.5)
             .setScrollFactor(0)
-            .setDepth(10002);
+            .setDepth(20001);
+
+        console.log(`🔍 controlBg created at (${padding}, ${controlY}) with size 100x40`);
+        console.log(`🔍 controlText created at (${padding + 50}, ${controlY + 20})`);
 
         console.log('✅ Barres de vie/mana créées');
         console.log(`HP Bar position: (${padding}, ${startY})`);
