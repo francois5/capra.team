@@ -179,6 +179,14 @@ class BlackRam extends Phaser.Physics.Arcade.Sprite {
     summonRats() {
         if (this.summonCooldown > 0) return;
 
+        // Si le bélier est allié, vérifier la limite du joueur
+        if (this.team === 'ally' && this.scene.player) {
+            if (this.scene.player.controlledMonsters >= this.scene.player.maxControlledMonsters) {
+                console.log('⚠️ Bélier allié ne peut pas invoquer: limite de contrôle atteinte');
+                return;
+            }
+        }
+
         // Compter le nombre de rats vivants invoqués par ce bélier
         const aliveRats = this.scene.giantRats ?
             this.scene.giantRats.filter(rat => rat.summoner === this && rat.state !== 'dead').length : 0;
