@@ -348,8 +348,8 @@ class GameScene extends Phaser.Scene {
         // Suivre le joueur
         this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
 
-        // Zoom
-        this.cameras.main.setZoom(1.5);
+        // Zoom (dézoomer de 4 niveaux pour voir la barre de mana)
+        this.cameras.main.setZoom(0.5);
 
         // Limites (optionnel)
         // this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);

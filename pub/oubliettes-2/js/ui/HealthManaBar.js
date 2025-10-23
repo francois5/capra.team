@@ -9,7 +9,7 @@ class HealthManaBar {
         const barWidth = 200;
         const barHeight = 20;
         const padding = 10;
-        const startY = padding;
+        const startY = 60; // Descendre les barres pour éviter le debug-info HTML
 
         // Barre de vie (rouge)
         this.healthBarBg = scene.add.rectangle(padding, startY, barWidth, barHeight, 0x333333)

@@ -211,12 +211,24 @@ class BlackRam extends Phaser.Physics.Arcade.Sprite {
                 // Créer le rat géant
                 const rat = new GiantRat(this.scene, spawnX, spawnY, this.worldOffset, this);
 
+                // Le rat hérite de l'équipe du bélier
+                rat.team = this.team;
+
+                // Si le bélier est allié, convertir le rat immédiatement
+                if (this.team === 'ally') {
+                    rat.loyalty = 0;
+                    rat.setTint(0xff9800);
+                    rat.territoryColor = 0xff9800;
+                    this.scene.player.controlledMonsters++;
+                    console.log(`✨ Rat invoqué par bélier allié (${this.scene.player.controlledMonsters}/${this.scene.player.maxControlledMonsters})`);
+                }
+
                 if (!this.scene.giantRats) {
                     this.scene.giantRats = [];
                 }
                 this.scene.giantRats.push(rat);
 
-                console.log(`🐀 Bélier invoque un rat géant en (${spawnX}, ${spawnY})`);
+                console.log(`🐀 Bélier ${this.team} invoque un rat géant en (${spawnX}, ${spawnY})`);
 
                 // Animation d'invocation (flash violet)
                 this.setTint(0x8800ff);
