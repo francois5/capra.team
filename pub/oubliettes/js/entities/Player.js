@@ -38,6 +38,11 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.keys = scene.input.keyboard.addKeys('W,S,A,D,SPACE,E');
         this.cursors = scene.input.keyboard.createCursorKeys();
 
+        // Système d'invocation
+        this.isInvoking = false;
+        this.invocationTarget = null;
+        this.invocationRate = 5; // Points de loyauté par seconde
+
         // Interface utilisateur
         this.ui = scene.ui;
 
@@ -102,23 +107,31 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         let velocityX = 0;
         let velocityY = 0;
 
-        // Vérifier les entrées de mouvement
-        if (this.keys.A.isDown || this.cursors.left.isDown) {
-            velocityX = -this.speed;
-        } else if (this.keys.D.isDown || this.cursors.right.isDown) {
-            velocityX = this.speed;
-        }
+        // Vérifier les contrôles tactiles mobiles en premier
+        const mobileControls = window.MobileControls;
+        if (mobileControls && mobileControls.joystick.active) {
+            // Utiliser le joystick virtuel
+            velocityX = mobileControls.joystick.x * this.speed;
+            velocityY = mobileControls.joystick.y * this.speed;
+        } else {
+            // Vérifier les entrées de mouvement clavier
+            if (this.keys.A.isDown || this.cursors.left.isDown) {
+                velocityX = -this.speed;
+            } else if (this.keys.D.isDown || this.cursors.right.isDown) {
+                velocityX = this.speed;
+            }
 
-        if (this.keys.W.isDown || this.cursors.up.isDown) {
-            velocityY = -this.speed;
-        } else if (this.keys.S.isDown || this.cursors.down.isDown) {
-            velocityY = this.speed;
-        }
+            if (this.keys.W.isDown || this.cursors.up.isDown) {
+                velocityY = -this.speed;
+            } else if (this.keys.S.isDown || this.cursors.down.isDown) {
+                velocityY = this.speed;
+            }
 
-        // Normaliser la vitesse diagonale pour éviter d'aller plus vite en diagonale
-        if (velocityX !== 0 && velocityY !== 0) {
-            velocityX *= 0.707; // Math.sqrt(2) / 2
-            velocityY *= 0.707;
+            // Normaliser la vitesse diagonale pour éviter d'aller plus vite en diagonale
+            if (velocityX !== 0 && velocityY !== 0) {
+                velocityX *= 0.707; // Math.sqrt(2) / 2
+                velocityY *= 0.707;
+            }
         }
 
         // Appliquer la vélocité
@@ -164,14 +177,144 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     handleActions() {
-        // Attaque
-        if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
+        const mobileControls = window.MobileControls;
+
+        // Attaque - Clavier ou bouton tactile
+        if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) ||
+            (mobileControls && this.checkButtonJustPressed('attack'))) {
             this.attack();
         }
 
-        // Ouvrir l'inventaire
-        if (Phaser.Input.Keyboard.JustDown(this.keys.E)) {
-            this.toggleInventory();
+        // Invocation (maintenir E) - Clavier ou bouton tactile
+        const invokePressed = this.keys.E.isDown ||
+            (mobileControls && mobileControls.buttons.invoke);
+
+        if (invokePressed) {
+            this.tryInvoke();
+        } else {
+            this.stopInvoking();
+        }
+
+        // Interaction - Bouton tactile uniquement (F est géré dans GameScene)
+        if (mobileControls && this.checkButtonJustPressed('interact')) {
+            this.scene.tryInteraction();
+        }
+    }
+
+    checkButtonJustPressed(buttonName) {
+        // Tracker pour détecter "just pressed" sur les boutons tactiles
+        if (!this.mobileButtonStates) {
+            this.mobileButtonStates = {
+                attack: false,
+                invoke: false,
+                interact: false
+            };
+        }
+
+        const mobileControls = window.MobileControls;
+        if (!mobileControls) return false;
+
+        const currentState = mobileControls.buttons[buttonName];
+        const previousState = this.mobileButtonStates[buttonName];
+        this.mobileButtonStates[buttonName] = currentState;
+
+        // Retourne true si le bouton vient d'être pressé (transition false -> true)
+        return currentState && !previousState;
+    }
+
+    tryInvoke() {
+        // Trouver une créature/escalier à invoquer
+        const interactionPoint = this.getInteractionPoint();
+        const target = this.scene.findInvokableTarget(interactionPoint.x, interactionPoint.y, 50);
+
+        if (target) {
+            if (!this.isInvoking || this.invocationTarget !== target) {
+                this.startInvoking(target);
+            }
+            this.continueInvoking();
+        } else {
+            this.stopInvoking();
+        }
+    }
+
+    startInvoking(target) {
+        this.isInvoking = true;
+        this.invocationTarget = target;
+        console.log(`Début de l'invocation de ${target.name}...`);
+
+        // Effet visuel
+        this.createInvocationEffect();
+    }
+
+    continueInvoking() {
+        if (!this.invocationTarget || !this.invocationTarget.active) {
+            this.stopInvoking();
+            return;
+        }
+
+        // Augmenter la loyauté à chaque frame
+        const delta = this.scene.game.loop.delta;
+        const loyaltyGain = (this.invocationRate * delta) / 1000;
+
+        if (this.invocationTarget.gainLoyalty) {
+            this.invocationTarget.gainLoyalty(loyaltyGain);
+        }
+
+        // Maintenir l'effet visuel
+        this.updateInvocationEffect();
+    }
+
+    stopInvoking() {
+        if (this.isInvoking) {
+            this.isInvoking = false;
+            this.invocationTarget = null;
+            this.destroyInvocationEffect();
+        }
+    }
+
+    createInvocationEffect() {
+        // Particules entre le joueur et la cible
+        this.invocationLine = this.scene.add.graphics();
+        this.invocationParticles = this.scene.add.particles(this.x, this.y, 'particle', {
+            speed: 50,
+            scale: { start: 0.5, end: 0 },
+            tint: 0x8844ff,
+            lifespan: 600,
+            frequency: 50,
+            blendMode: 'ADD'
+        });
+    }
+
+    updateInvocationEffect() {
+        if (!this.invocationTarget) return;
+
+        // Ligne entre joueur et cible
+        if (this.invocationLine) {
+            this.invocationLine.clear();
+            this.invocationLine.lineStyle(2, 0x8844ff, 0.6);
+            this.invocationLine.beginPath();
+            this.invocationLine.moveTo(this.x, this.y);
+            this.invocationLine.lineTo(this.invocationTarget.x, this.invocationTarget.y);
+            this.invocationLine.strokePath();
+        }
+
+        // Mettre à jour la position des particules
+        if (this.invocationParticles) {
+            this.invocationParticles.setPosition(
+                (this.x + this.invocationTarget.x) / 2,
+                (this.y + this.invocationTarget.y) / 2
+            );
+        }
+    }
+
+    destroyInvocationEffect() {
+        if (this.invocationLine) {
+            this.invocationLine.destroy();
+            this.invocationLine = null;
+        }
+        if (this.invocationParticles) {
+            this.invocationParticles.destroy();
+            this.invocationParticles = null;
         }
     }
 

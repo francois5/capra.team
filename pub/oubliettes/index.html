@@ -2,7 +2,10 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Oubliettes - Jeu de donjon RPG</title>
     <style>
         * {
@@ -82,12 +85,138 @@
         .controls-overlay p {
             margin: 2px 0;
         }
+
+        /* Contrôles tactiles mobiles */
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 200;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .mobile-controls {
+                display: block;
+            }
+            .controls-overlay {
+                display: none !important;
+            }
+        }
+
+        /* Joystick virtuel */
+        #joystick-container {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 140px;
+            height: 140px;
+            pointer-events: auto;
+        }
+
+        #joystick-base {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(100, 100, 100, 0.4) 0%, rgba(50, 50, 50, 0.6) 100%);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        #joystick-stick {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(200, 200, 200, 0.6) 100%);
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+        }
+
+        /* Boutons d'action */
+        .action-buttons {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .action-button {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            background: radial-gradient(circle, rgba(100, 100, 100, 0.6) 0%, rgba(50, 50, 50, 0.8) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        .action-button:active {
+            transform: scale(0.95);
+            background: radial-gradient(circle, rgba(120, 120, 120, 0.7) 0%, rgba(70, 70, 70, 0.9) 100%);
+        }
+
+        .action-button.attack {
+            background: radial-gradient(circle, rgba(255, 80, 80, 0.6) 0%, rgba(200, 50, 50, 0.8) 100%);
+            border-color: rgba(255, 100, 100, 0.6);
+        }
+
+        .action-button.invoke {
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.6) 0%, rgba(100, 30, 180, 0.8) 100%);
+            border-color: rgba(200, 100, 255, 0.6);
+        }
+
+        .action-button.interact {
+            background: radial-gradient(circle, rgba(100, 200, 100, 0.6) 0%, rgba(50, 150, 50, 0.8) 100%);
+            border-color: rgba(150, 255, 150, 0.6);
+        }
+
+        /* Rangée horizontale pour certains boutons */
+        .button-row {
+            display: flex;
+            gap: 15px;
+        }
     </style>
 </head>
 <body>
     <div id="loading">Chargement d'Oubliettes</div>
 
     <div id="gameContainer"></div>
+
+    <!-- Contrôles tactiles pour mobile -->
+    <div class="mobile-controls" id="mobileControls">
+        <!-- Joystick virtuel -->
+        <div id="joystick-container">
+            <div id="joystick-base"></div>
+            <div id="joystick-stick"></div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="action-buttons">
+            <div class="button-row">
+                <div class="action-button interact" id="btn-interact">F</div>
+            </div>
+            <div class="button-row">
+                <div class="action-button invoke" id="btn-invoke">E</div>
+                <div class="action-button attack" id="btn-attack">⚔</div>
+            </div>
+        </div>
+    </div>
 
     <div class="info-overlay" id="gameInfo" style="display: none;">
         <div><strong>Oubliettes</strong></div>
@@ -100,7 +229,7 @@
         <p>F : Interagir avec NPCs</p>
         <p>Q : Lancer un sort</p>
         <p>Espace : Attaquer</p>
-        <p>E : Inventaire</p>
+        <p>E (maintenir) : Invoquer/Convertir</p>
         <p>F5 : Sauvegarder</p>
     </div>
 
@@ -111,6 +240,11 @@
     <script src="js/world/DungeonGenerator.js"></script>
     <script src="js/entities/Player.js"></script>
     <script src="js/entities/NPC.js"></script>
+    <script src="js/entities/Creature.js"></script>
+    <script src="js/entities/Rat.js"></script>
+    <script src="js/entities/Ram.js"></script>
+    <script src="js/entities/Archer.js"></script>
+    <script src="js/entities/Stairway.js"></script>
     <script src="js/ui/UIManager.js"></script>
     <script src="js/scenes/BootScene.js"></script>
     <script src="js/scenes/PreloadScene.js"></script>
@@ -118,6 +252,102 @@
     <script src="js/game.js"></script>
 
     <script>
+        // Gestionnaire de contrôles tactiles
+        window.MobileControls = {
+            joystick: { x: 0, y: 0, active: false },
+            buttons: {
+                attack: false,
+                invoke: false,
+                interact: false
+            }
+        };
+
+        // Initialiser les contrôles tactiles
+        function initMobileControls() {
+            const joystickContainer = document.getElementById('joystick-container');
+            const joystickStick = document.getElementById('joystick-stick');
+            const joystickBase = document.getElementById('joystick-base');
+
+            if (!joystickContainer) return;
+
+            let joystickActive = false;
+            let joystickStartX = 0;
+            let joystickStartY = 0;
+            const maxDistance = 40;
+
+            // Gestion du joystick
+            joystickContainer.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                joystickActive = true;
+                const rect = joystickBase.getBoundingClientRect();
+                joystickStartX = rect.left + rect.width / 2;
+                joystickStartY = rect.top + rect.height / 2;
+                window.MobileControls.joystick.active = true;
+            });
+
+            joystickContainer.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (!joystickActive) return;
+
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - joystickStartX;
+                const deltaY = touch.clientY - joystickStartY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                let x = deltaX;
+                let y = deltaY;
+
+                if (distance > maxDistance) {
+                    x = (deltaX / distance) * maxDistance;
+                    y = (deltaY / distance) * maxDistance;
+                }
+
+                joystickStick.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+
+                // Normaliser pour le jeu (-1 à 1)
+                window.MobileControls.joystick.x = x / maxDistance;
+                window.MobileControls.joystick.y = y / maxDistance;
+            });
+
+            const endJoystick = () => {
+                joystickActive = false;
+                joystickStick.style.transform = 'translate(-50%, -50%)';
+                window.MobileControls.joystick.x = 0;
+                window.MobileControls.joystick.y = 0;
+                window.MobileControls.joystick.active = false;
+            };
+
+            joystickContainer.addEventListener('touchend', endJoystick);
+            joystickContainer.addEventListener('touchcancel', endJoystick);
+
+            // Gestion des boutons
+            const setupButton = (id, key) => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    window.MobileControls.buttons[key] = true;
+                });
+
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    window.MobileControls.buttons[key] = false;
+                });
+
+                btn.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    window.MobileControls.buttons[key] = false;
+                });
+            };
+
+            setupButton('btn-attack', 'attack');
+            setupButton('btn-invoke', 'invoke');
+            setupButton('btn-interact', 'interact');
+
+            console.log('✅ Contrôles tactiles mobiles initialisés');
+        }
+
         // Masquer le message de chargement quand le jeu démarre
         window.addEventListener('load', () => {
             setTimeout(() => {
@@ -129,6 +359,9 @@
 
                 const controls = document.getElementById('controls');
                 if (controls) controls.style.display = 'block';
+
+                // Initialiser les contrôles mobiles
+                initMobileControls();
             }, 2000);
         });
     </script>
