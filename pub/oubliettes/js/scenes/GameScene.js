@@ -146,6 +146,16 @@ class GameScene extends Phaser.Scene {
     setupNPCs() {
         this.npcGroup = this.physics.add.group();
 
+        // Groupes pour les créatures
+        this.enemiesGroup = this.physics.add.group();
+        this.alliesGroup = this.physics.add.group();
+        this.stairways = [];
+
+        // Compteur d'alliés convertis
+        this.convertedRats = 0;
+        this.convertedRams = 0;
+        this.convertedStairways = 0;
+
         const npcSpawnPoints = this.dungeonGenerator.getNPCSpawnPoints();
 
         // Créer des NPCs spécifiques à l'histoire
@@ -198,6 +208,111 @@ class GameScene extends Phaser.Scene {
             wizard.canTeachMagic = true;
             this.npcGroup.add(wizard);
         }
+
+        // Spawner les créatures
+        this.spawnCreatures();
+    }
+
+    spawnCreatures() {
+        // PROTOTYPE: Configuration simple avec 1 rat, 1 ram, 1 escalier avec 2 archers
+
+        // 1. Spawner 1 rat (codétenu) dans la première salle
+        const startRoom = this.dungeonGenerator.rooms[0];
+        const rat = new Rat(this,
+            (startRoom.x + 3) * 32,
+            (startRoom.y + 2) * 32
+        );
+        this.enemiesGroup.add(rat);
+        console.log("Prototype: Rat codétenu spawné");
+
+        // 2. Spawner 1 ram dans une cave adjacente (deuxième salle)
+        if (this.dungeonGenerator.rooms.length > 1) {
+            const adjacentRoom = this.dungeonGenerator.rooms[1];
+            const ram = new Ram(this,
+                (adjacentRoom.x + Math.floor(adjacentRoom.width / 2)) * 32,
+                (adjacentRoom.y + Math.floor(adjacentRoom.height / 2)) * 32
+            );
+            this.enemiesGroup.add(ram);
+            console.log("Prototype: Ram spawné dans cave adjacente");
+        }
+
+        // 3. Spawner un escalier de lumière avec 2 archers dans une salle éloignée
+        // Utiliser la 3ème ou 4ème salle si disponible, sinon la salle boss
+        let stairwayRoom = this.dungeonGenerator.rooms.find(r => r.type === 'boss');
+        if (!stairwayRoom && this.dungeonGenerator.rooms.length > 2) {
+            stairwayRoom = this.dungeonGenerator.rooms[this.dungeonGenerator.rooms.length - 1];
+        }
+
+        if (stairwayRoom) {
+            const stairway = new Stairway(this,
+                (stairwayRoom.x + Math.floor(stairwayRoom.width / 2)) * 32,
+                (stairwayRoom.y + Math.floor(stairwayRoom.height / 2)) * 32
+            );
+            this.stairways.push(stairway);
+            console.log("Prototype: Escalier de lumière spawné avec 2 archers gardiens");
+        }
+    }
+
+    onCreatureConverted(creature) {
+        console.log(`Créature convertie: ${creature.name}`);
+
+        // Déplacer vers le groupe d'alliés
+        this.enemiesGroup.remove(creature);
+        this.alliesGroup.add(creature);
+
+        // Compter les conversions
+        if (creature instanceof Rat) {
+            this.convertedRats++;
+        } else if (creature instanceof Ram) {
+            this.convertedRams++;
+        }
+
+        // Afficher un message
+        this.ui.showStoryText(`${creature.name} vous a rejoint!`, 2000);
+    }
+
+    onStairwayConverted(stairway) {
+        console.log('Escalier de lumière converti!');
+        this.convertedStairways++;
+        this.ui.showStoryText('Vous avez libéré un sanctuaire de lumière!', 3000);
+    }
+
+    findInvokableTarget(x, y, range) {
+        // Chercher une créature ennemie
+        let nearestTarget = null;
+        let nearestDistance = Infinity;
+
+        this.enemiesGroup.children.entries.forEach(enemy => {
+            const distance = Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y);
+            if (distance < range && distance < nearestDistance) {
+                nearestTarget = enemy;
+                nearestDistance = distance;
+            }
+        });
+
+        // Chercher un escalier
+        this.stairways.forEach(stairway => {
+            if (!stairway.isConverted) {
+                const distance = Phaser.Math.Distance.Between(x, y, stairway.x, stairway.y);
+                if (distance < range * 1.5 && distance < nearestDistance) {
+                    nearestTarget = stairway;
+                    nearestDistance = distance;
+                }
+            }
+        });
+
+        return nearestTarget;
+    }
+
+    getEnemiesNearPoint(x, y, range) {
+        const enemies = [];
+        this.enemiesGroup.children.entries.forEach(enemy => {
+            const distance = Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y);
+            if (distance < range) {
+                enemies.push(enemy);
+            }
+        });
+        return enemies;
     }
 
     setupPhysics() {
@@ -211,6 +326,24 @@ class GameScene extends Phaser.Scene {
 
         // Empêcher les NPCs de traverser les murs
         this.physics.add.collider(this.npcGroup, this.wallGroup);
+
+        // Collisions créatures-murs
+        this.physics.add.collider(this.enemiesGroup, this.wallGroup);
+        this.physics.add.collider(this.alliesGroup, this.wallGroup);
+
+        // Collisions créatures-joueur (overlap pour permettre l'invocation)
+        this.physics.add.overlap(this.player, this.enemiesGroup, (player, enemy) => {
+            // Les ennemis peuvent attaquer
+        });
+
+        // Combat entre alliés et ennemis
+        this.physics.add.overlap(this.alliesGroup, this.enemiesGroup, (ally, enemy) => {
+            // Les alliés attaquent automatiquement les ennemis proches
+            if (ally.attackCooldown <= 0) {
+                ally.target = enemy;
+                ally.aiState = 'chase';
+            }
+        });
     }
 
     setupInput() {
@@ -246,6 +379,20 @@ class GameScene extends Phaser.Scene {
         // Mettre à jour les NPCs
         this.npcGroup.children.entries.forEach(npc => {
             npc.update(time, delta);
+        });
+
+        // Mettre à jour les créatures
+        this.enemiesGroup.children.entries.forEach(enemy => {
+            if (enemy.update) enemy.update(time, delta);
+        });
+
+        this.alliesGroup.children.entries.forEach(ally => {
+            if (ally.update) ally.update(time, delta);
+        });
+
+        // Mettre à jour les escaliers
+        this.stairways.forEach(stairway => {
+            if (stairway.update) stairway.update(time, delta);
         });
 
         // Gérer les interactions
