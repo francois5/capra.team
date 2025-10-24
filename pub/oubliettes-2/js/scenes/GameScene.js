@@ -348,8 +348,9 @@ class GameScene extends Phaser.Scene {
         // Suivre le joueur
         this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
 
-        // Zoom (dézoomer de 4 niveaux pour voir la barre de mana)
-        this.cameras.main.setZoom(0.5);
+        // Zoom (dézoomer davantage pour une meilleure vue d'ensemble)
+        // Zoom très dézoomé pour voir le plateau entier
+        this.cameras.main.setZoom(0.08);
 
         // Limites (optionnel)
         // this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
@@ -369,7 +370,7 @@ class GameScene extends Phaser.Scene {
 
         this.input.keyboard.on('keydown-MINUS', () => {
             const currentZoom = this.cameras.main.zoom;
-            this.cameras.main.setZoom(Math.max(currentZoom - 0.1, 0.5));
+            this.cameras.main.setZoom(Math.max(currentZoom - 0.1, 0.1));
         });
     }
 
